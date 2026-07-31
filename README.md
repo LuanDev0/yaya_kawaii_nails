@@ -4,9 +4,38 @@ Sistema de agendamento para salão de manicure, pedicure e nail design — gest�
 
 ## Status
 
-**Em definição.** Julho de 2026: o escopo e as decisões técnicas estão fechados, mas ainda não há código. A próxima etapa é criar o projeto Expo com o tema da marca.
+**Camada 1A concluída** (julho de 2026): projeto criado, identidade visual aplicada e componentes base prontos. A tela inicial é uma prévia do tema, não uma funcionalidade — o app ainda não agenda nada.
 
-Não há nada para instalar ou rodar ainda — esta seção ganha conteúdo assim que a camada 1 existir.
+Próximo passo: camada 1B, o banco de dados no Supabase.
+
+## Como rodar
+
+### Pré-requisitos
+- Node 20 ou superior
+- App **Expo Go** no celular ([Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent))
+
+### Passo a passo
+```bash
+npm install
+npm start
+```
+
+Um QR code aparece no terminal. Abra o Expo Go no celular e aponte a câmera para ele — o app carrega e recarrega sozinho a cada alteração no código.
+
+Para abrir no navegador em vez do celular, tecle `w` com o servidor rodando, ou:
+
+```bash
+npm run web
+```
+
+### Outros comandos
+
+| Comando | O que faz |
+|---|---|
+| `npm start` | Servidor de desenvolvimento com QR code |
+| `npm run web` | Abre direto no navegador |
+| `npm run android` | Abre num emulador Android |
+| `npx tsc --noEmit` | Verifica erros de tipo sem gerar arquivos |
 
 ## Stack escolhida
 
@@ -38,7 +67,8 @@ O detalhe de cada uma está em [Funcionalidades](docs/FUNCIONALIDADES.md).
 
 ## Documentação
 
+- [Arquitetura](docs/ARQUITETURA.md) — como o código é organizado e como o tema funciona
 - [Funcionalidades](docs/FUNCIONALIDADES.md) — o que o app faz, passo a passo
 - [Decisões técnicas](docs/DECISOES.md) — por que as coisas são do jeito que são
 
-`docs/ARQUITETURA.md` e `docs/BANCO-DE-DADOS.md` entram quando houver código e schema — documentar pastas e tabelas que ainda não existem seria inventar.
+`docs/BANCO-DE-DADOS.md` entra junto com o schema, na camada 1B.

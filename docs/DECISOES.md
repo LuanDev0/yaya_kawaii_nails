@@ -1,6 +1,45 @@
 # Decisões técnicas
 
-Todas as decisões abaixo foram tomadas em **julho de 2026**, antes de existir código, numa conversa de definição de escopo. Mais recente no topo.
+Todas de **julho de 2026**. Da DT-001 à DT-011, tomadas numa conversa de definição de escopo, antes de existir código; DT-012 e DT-013 surgiram durante a construção da camada 1. Mais recente no topo.
+
+---
+
+## DT-013 — Código em inglês, interface em português
+**Situação:** aceita
+
+### Contexto
+O projeto é de uma desenvolvedora brasileira, para um público brasileiro. Não era óbvio se os nomes de variáveis, funções e componentes deveriam acompanhar o idioma da interface.
+
+### Decisão
+Identificadores em inglês (`Button`, `useTheme`, `appointments`). Todo texto que o usuário lê, em português.
+
+### Alternativas consideradas
+- **Tudo em português** — mais confortável de ler para quem está começando, mas geraria mistura constante com as APIs do React Native, que são em inglês: `onPress` ao lado de `aoApertar`, `useState` ao lado de `definirModo`. O código fica com dois vocabulários disputando a mesma linha.
+
+### Consequências
+- Consistência com React Native, Expo e com os nomes de tabela do banco
+- Se um dia outra pessoa entrar no projeto, o código está no padrão que ela espera
+- Exige atenção para não deixar português vazar em nome de variável
+
+---
+
+## DT-012 — Estilo com StyleSheet e módulo de tema, sem biblioteca de UI
+**Situação:** aceita
+
+### Contexto
+A identidade visual é bem específica: laranja kawaii, cantos bem arredondados, Baloo 2 nos títulos.
+
+### Decisão
+Escrever os estilos com o `StyleSheet` do próprio React Native, alimentado por um módulo de tema em `src/constants/theme.ts`.
+
+### Alternativas consideradas
+- **Biblioteca pronta (React Native Paper, Tamagui)** — traria componentes com visual próprio que teríamos que sobrescrever peça por peça. Numa marca tão caracterizada, a biblioteca vira obstáculo em vez de atalho.
+- **NativeWind** — classes curtas no estilo Tailwind, mas adiciona um passo de build que costuma quebrar em upgrade de SDK do Expo. Custo alto de manutenção para um projeto de uma pessoa só.
+
+### Consequências
+- Controle total sobre o visual, sem lutar contra padrão de terceiro
+- Mais código escrito à mão nos componentes base — pago uma vez, reaproveitado sempre
+- A regra "nenhuma tela escreve cor à mão" passa a ser o que garante o modo escuro; se alguém furar, quebra silenciosamente
 
 ---
 
