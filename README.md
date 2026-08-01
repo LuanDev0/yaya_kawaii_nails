@@ -6,7 +6,7 @@ Sistema de agendamento para salão de manicure, pedicure e nail design — gest�
 
 **Camada 1 concluída** (julho de 2026): projeto criado, identidade visual aplicada, componentes base prontos e banco de dados no ar. A tela inicial é uma prévia do tema que lista os serviços vindos do Supabase — serve para provar que a conexão funciona, não é uma funcionalidade. O app ainda não agenda nada.
 
-Próximo passo: camada 2, o fluxo de agendamento.
+Próximo passo: camada 2, login da dona e tela de configuração.
 
 ## Como rodar
 
@@ -60,13 +60,15 @@ Dois públicos, dois caminhos de acesso:
 
 O app sai em camadas, cada uma utilizável sozinha:
 
-1. Fundação — projeto, tema, banco de dados
-2. Agendar — cliente marca pelo link, dona vê e aprova ← *primeira versão usável*
-3. Clientes — ficha, histórico
-4. WhatsApp — confirmação, lembrete e retorno
-5. Fotos — galeria e registro dos atendimentos
-6. Financeiro — faturamento
-7. Configurações — horários, aprovação, cancelamento
+1. ~~Fundação — projeto, tema, banco de dados~~ ✅
+2. Login e configuração — a dona entra e cadastra seus serviços e horários reais
+3. Agendar — cliente marca pelo link, dona vê e aprova ← *primeira versão usável*
+4. Clientes — ficha, histórico
+5. WhatsApp — confirmação, lembrete e retorno
+6. Fotos — galeria e registro dos atendimentos
+7. Financeiro — faturamento
+
+A configuração era a última camada e passou para a segunda: sem ela, a lógica de horários livres seria construída sobre serviços e horários inventados ([DT-015](docs/DECISOES.md)).
 
 O detalhe de cada uma está em [Funcionalidades](docs/FUNCIONALIDADES.md).
 

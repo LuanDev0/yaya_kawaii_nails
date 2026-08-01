@@ -1,6 +1,52 @@
 # Decisões técnicas
 
-Todas de **julho de 2026**. Da DT-001 à DT-011, tomadas numa conversa de definição de escopo, antes de existir código; DT-012 e DT-013 surgiram durante a construção da camada 1. Mais recente no topo.
+Todas de **julho de 2026**. Da DT-001 à DT-011, tomadas numa conversa de definição de escopo, antes de existir código; da DT-012 em diante, durante a construção. Mais recente no topo.
+
+---
+
+## DT-015 — Configuração antes do agendamento
+**Situação:** aceita
+
+### Contexto
+O plano original deixava a tela de configuração por último (camada 7). Ao ser perguntada pelos serviços e horários reais, a dona respondeu que prefere cadastrá-los ela mesma, na tela.
+
+Isso deixaria toda a construção acontecendo sobre dados inventados — inclusive a lógica de "quais horários estão livres", que é a parte mais delicada do agendamento.
+
+### Decisão
+Trocar a ordem: login e configuração viram a camada 2, e o agendamento passa a ser a camada 3.
+
+### Consequências
+- A lógica de disponibilidade é construída e testada contra os horários e durações reais do salão. Testar com dado falso esconde bug que só aparece com dado real
+- A primeira versão utilizável demora um pouco mais a aparecer
+- O login precisava existir antes da configuração de qualquer forma (DT-014), então as duas caminham juntas
+
+---
+
+## DT-014 — Login da dona por email e senha, vinculado à profissional
+**Situação:** aceita
+
+### Contexto
+A cliente não tem login (DT-004), mas as regras de acesso do banco bloqueiam toda escrita. Sem uma identidade autenticada, a dona não consegue salvar configuração, aprovar agendamento nem cadastrar cliente.
+
+### Decisão
+Autenticação por email e senha, usando o Supabase Auth. E — este é o ponto que importa — a conta é **vinculada** a uma linha de `professionals` por uma coluna `auth_user_id`.
+
+As políticas de acesso perguntam *"existe uma profissional cujo `auth_user_id` é o usuário logado?"*, e não simplesmente *"está logado?"*.
+
+### Por que o vínculo, e não só "está logado"
+
+O Supabase vem com cadastro aberto por padrão. A regra ingênua trataria qualquer pessoa que criasse uma conta no projeto como se fosse a dona, dando acesso à agenda e aos dados das clientes.
+
+Com o vínculo, uma conta criada por fora não corresponde a nenhuma profissional e não enxerga nada. A segurança deixa de depender de lembrar de desligar o cadastro no painel.
+
+### Alternativas consideradas
+- **Link mágico por email** — dispensa senha, mas depende de acesso ao email no momento de entrar
+- **PIN de quatro dígitos no app** — mais cômodo, porém qualquer pessoa com o link e o PIN entra como a dona, e o PIN teria que ficar guardado de forma que não protege de verdade. Inaceitável com dados de cliente no banco
+
+### Consequências
+- Só a cliente fica sem senha; a gestão é autenticada
+- Funciona sem alteração quando houver mais de uma profissional (DT-007)
+- `src/lib/supabase.ts` precisa passar a persistir sessão, hoje desligada
 
 ---
 
