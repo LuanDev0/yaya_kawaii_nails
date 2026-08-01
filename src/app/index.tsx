@@ -1,11 +1,12 @@
 /**
  * Tela de demonstração da identidade visual.
  *
- * Existe para validar cores, fontes e componentes no aparelho de verdade.
- * Sai do projeto quando a camada 2 (agendamento) entrar.
+ * Existe para validar cores, fontes e componentes no aparelho de verdade, e
+ * para provar que o app conversa com o banco. Sai quando a camada 2 entrar.
  */
 
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -13,6 +14,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { MaxContentWidth, Radius, Spacing, type ThemeColor } from '@/constants/theme';
 import { useTheme, type ThemeMode } from '@/hooks/use-theme';
+import { formatDuration, formatPrice, supabase, type Service } from '@/lib/supabase';
 
 const MODES: { value: ThemeMode; label: string }[] = [
   { value: 'system', label: 'Sistema' },
@@ -27,11 +29,6 @@ const SWATCHES: ThemeColor[] = [
   'blush',
   'peach',
   'surface',
-];
-
-const APPOINTMENTS = [
-  { service: 'Alongamento em gel', when: 'Ter, 5 de agosto · 14:00', price: 'R$ 120' },
-  { service: 'Manutenção', when: 'Qui, 21 de agosto · 10:30', price: 'R$ 80' },
 ];
 
 export default function ThemePreviewScreen() {
@@ -91,28 +88,83 @@ export default function ThemePreviewScreen() {
           </View>
         </Section>
 
-        <Section title="Como fica na prática">
-          <Card>
-            <AppText variant="heading">Seus agendamentos</AppText>
-            {APPOINTMENTS.map((item) => (
-              <View
-                key={item.service}
-                style={[styles.appointmentRow, { borderTopColor: colors.border }]}>
-                <View style={styles.appointmentInfo}>
-                  <AppText variant="bodyBold">{item.service}</AppText>
-                  <AppText variant="support" color="textSecondary">
-                    {item.when}
-                  </AppText>
-                </View>
-                <AppText variant="bodyBold" color="textAccent">
-                  {item.price}
-                </AppText>
-              </View>
-            ))}
-          </Card>
+        <Section title="Serviços vindos do banco">
+          <ServiceList />
         </Section>
       </View>
     </ScrollView>
+  );
+}
+
+/**
+ * Busca os serviços no Supabase. Além de mostrar o visual com dados reais,
+ * é a prova de que a conexão e as regras de acesso funcionam de ponta a ponta.
+ */
+function ServiceList() {
+  const { colors } = useTheme();
+  const [services, setServices] = useState<Service[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    supabase
+      .from('services')
+      .select('*')
+      .order('sort_order')
+      .then(({ data, error: queryError }) => {
+        if (!active) return;
+
+        if (queryError) setError(queryError.message);
+        else setServices(data as Service[]);
+      });
+
+    // Evita atualizar estado depois que a tela saiu, o que gera aviso no console.
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <Card>
+        <AppText variant="bodyBold">Não deu para carregar os serviços</AppText>
+        <AppText variant="support" color="textSecondary" style={styles.spaced}>
+          {error}
+        </AppText>
+      </Card>
+    );
+  }
+
+  if (!services) {
+    return (
+      <Card>
+        <ActivityIndicator color={colors.primary} />
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      {services.map((service, index) => (
+        <View
+          key={service.id}
+          style={[
+            styles.serviceRow,
+            index > 0 && { borderTopWidth: 1, borderTopColor: colors.border },
+          ]}>
+          <View style={styles.serviceInfo}>
+            <AppText variant="bodyBold">{service.name}</AppText>
+            <AppText variant="support" color="textSecondary">
+              {formatDuration(service.duration_minutes)}
+            </AppText>
+          </View>
+          <AppText variant="bodyBold" color="textAccent">
+            {formatPrice(service.price_cents)}
+          </AppText>
+        </View>
+      ))}
+    </Card>
   );
 }
 
@@ -206,15 +258,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: Spacing.one,
   },
-  appointmentRow: {
+  serviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
     paddingVertical: Spacing.two,
-    marginTop: Spacing.two,
   },
-  appointmentInfo: {
+  serviceInfo: {
     flex: 1,
     paddingRight: Spacing.two,
   },

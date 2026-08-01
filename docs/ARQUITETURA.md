@@ -1,6 +1,6 @@
 # Arquitetura
 
-Estado em julho de 2026: existe a camada 1A — projeto, identidade visual e componentes base. Ainda não há banco de dados nem telas de agendamento.
+Estado em julho de 2026: existe a camada 1 — projeto, identidade visual, componentes base e banco de dados. Ainda não há telas de agendamento.
 
 ## Visão geral
 
@@ -16,6 +16,8 @@ O roteamento é do Expo Router, que transforma a estrutura de arquivos em rotas:
 | `src/components/` | Componentes reutilizáveis | Lê o tema, não recebe cor por prop |
 | `src/constants/` | Tema: cores, tipografia, raios, espaçamentos | Fonte única de valores visuais |
 | `src/hooks/` | Hooks compartilhados | |
+| `src/lib/` | Integrações externas | Único lugar que fala com o Supabase |
+| `supabase/migrations/` | Schema do banco, em SQL | |
 | `assets/` | Ícones e splash | |
 
 O alias `@/` aponta para `src/` (configurado em `tsconfig.json`). Use `@/components/button`, não caminho relativo.
@@ -66,8 +68,15 @@ Telas nunca declaram `fontFamily`. Use `<AppText variant="…">`, que já aplica
 
 **Sem biblioteca de UI.** Tudo com `StyleSheet` e o módulo de tema. Ver [DT-012](DECISOES.md).
 
+## Acesso a dados
+
+`src/lib/supabase.ts` é o único ponto que conversa com o banco. Telas não montam consulta SQL nem chamam a API direto.
+
+A autenticação do Supabase está **desligada** (`persistSession: false`): a cliente se identifica por nome e telefone, sem senha ([DT-004](DECISOES.md)). Quem protege os dados são as políticas de acesso do banco, não uma sessão de login — o desenho das políticas está em [BANCO-DE-DADOS.md](BANCO-DE-DADOS.md).
+
+As credenciais vêm de `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY`. O prefixo `EXPO_PUBLIC_` é obrigatório: sem ele o Expo não expõe a variável ao código do app. Se faltar alguma, o app falha na abertura com uma mensagem dizendo o que fazer — melhor que uma tela em branco e `undefined` no console.
+
 ## O que ainda não existe
 
 - **Divisão de rotas por público.** Hoje `src/app/index.tsx` é a tela de prévia da identidade. Na camada 2 entram os grupos `(cliente)` e `(dona)`, e essa tela sai.
-- **Supabase.** Nenhuma conexão com banco ainda; é a camada 1B.
-- **`docs/BANCO-DE-DADOS.md`.** Entra junto com o schema.
+- **Escrita no banco.** As políticas de acesso hoje só permitem leitura do catálogo. Agendar, cadastrar cliente e aprovar entram na camada 2.

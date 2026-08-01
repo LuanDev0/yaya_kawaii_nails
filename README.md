@@ -4,9 +4,9 @@ Sistema de agendamento para salão de manicure, pedicure e nail design — gest�
 
 ## Status
 
-**Camada 1A concluída** (julho de 2026): projeto criado, identidade visual aplicada e componentes base prontos. A tela inicial é uma prévia do tema, não uma funcionalidade — o app ainda não agenda nada.
+**Camada 1 concluída** (julho de 2026): projeto criado, identidade visual aplicada, componentes base prontos e banco de dados no ar. A tela inicial é uma prévia do tema que lista os serviços vindos do Supabase — serve para provar que a conexão funciona, não é uma funcionalidade. O app ainda não agenda nada.
 
-Próximo passo: camada 1B, o banco de dados no Supabase.
+Próximo passo: camada 2, o fluxo de agendamento.
 
 ## Como rodar
 
@@ -17,8 +17,13 @@ Próximo passo: camada 1B, o banco de dados no Supabase.
 ### Passo a passo
 ```bash
 npm install
+cp .env.example .env
 npm start
 ```
+
+Preencha o `.env` com a URL e a chave `anon` do projeto Supabase (painel → Settings → API Keys). Sem isso o app não abre — e o erro diz exatamente o que está faltando.
+
+As variáveis só são lidas quando o servidor inicia: se editar o `.env`, reinicie o `npm start`.
 
 Um QR code aparece no terminal. Abra o Expo Go no celular e aponte a câmera para ele — o app carrega e recarrega sozinho a cada alteração no código.
 

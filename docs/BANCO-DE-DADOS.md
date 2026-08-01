@@ -1,0 +1,147 @@
+# Banco de dados
+
+Postgres hospedado no Supabase, região São Paulo (`sa-east-1`).
+
+O schema vive em `supabase/migrations/`. Para aplicar: painel do Supabase → **SQL Editor** → colar o arquivo → **Run**.
+
+## Diagrama
+
+```mermaid
+erDiagram
+    professionals ||--o{ appointments : atende
+    professionals ||--o{ business_hours : "trabalha em"
+    clients       ||--o{ appointments : faz
+    services      ||--o{ appointments : "é agendado em"
+```
+
+## Tabelas
+
+### `professionals`
+
+Profissionais que atendem. Uma linha por enquanto ([DT-007](DECISOES.md)).
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | uuid | |
+| `name` | text | |
+| `active` | boolean | Inativa some do catálogo público |
+
+### `services`
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | uuid | |
+| `name` | text | |
+| `price_cents` | integer | **Centavos**, não decimal — ver abaixo |
+| `duration_minutes` | integer | Define quais horários cabem na agenda |
+| `active` | boolean | |
+| `sort_order` | integer | Ordem de exibição para a cliente |
+
+### `clients`
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | uuid | |
+| `name` | text | |
+| `phone` | text | **Único.** É a identidade da cliente, já que não há senha ([DT-004](DECISOES.md)). Guardar só dígitos |
+| `birth_date` | date | |
+| `preferences` | text | Formato, tamanho, cores que ela gosta |
+| `notes` | text | Observações livres |
+
+Não há campo de dados de saúde. A anamnese fica em papel ([DT-010](DECISOES.md)), e por isso o app não guarda informação sensível de saúde.
+
+### `appointments`
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | uuid | |
+| `client_id` | uuid | → `clients.id` |
+| `service_id` | uuid | → `services.id` |
+| `professional_id` | uuid | → `professionals.id` |
+| `starts_at` | timestamptz | |
+| `ends_at` | timestamptz | Calculado a partir da duração do serviço |
+| `status` | text | `pendente`, `confirmado`, `cancelado`, `concluido` |
+| `price_cents` | integer | **Cópia** do preço no momento da marcação |
+| `notes` | text | |
+
+### `business_hours`
+
+Chave primária composta por `(professional_id, weekday)` — uma faixa por dia da semana.
+
+`weekday` segue a convenção do JavaScript: `0` = domingo, `6` = sábado.
+
+### `settings`
+
+Tabela de uma linha só. A chave primária é um boolean que só aceita `true`, então uma segunda linha é impossível — evita o clássico "qual das duas configurações vale?".
+
+| Coluna | Padrão | Para que |
+|---|---|---|
+| `require_approval` | `true` | Dona aprova cada agendamento ([DT-008](DECISOES.md)) |
+| `allow_client_cancel` | `true` | Cliente cancela sozinha |
+| `maintenance_reminder_days` | `21` | Dias até a cliente entrar na lista de retorno |
+
+> ⚠️ **A confirmar:** `maintenance_reminder_days` está em 21 por suposição. Qual é o prazo real de manutenção? Varia por serviço?
+
+## Duas escolhas que merecem explicação
+
+### Dinheiro em centavos, não em decimal
+
+`price_cents` é `integer`. Guardar dinheiro como número de ponto flutuante acumula erro de arredondamento, e isso aparece no relatório de faturamento como centavos que não fecham. Um preço de R$ 120,00 é `12000`.
+
+### O preço é copiado para o agendamento
+
+`appointments.price_cents` duplica o valor de `services.price_cents` de propósito, no momento da marcação.
+
+Sem essa cópia, aumentar o preço de um serviço reescreveria o histórico: o faturamento do mês passado mudaria sozinho, e o que a cliente pagou deixaria de bater com o que está registrado.
+
+## A trava de horário
+
+O ponto que justificou escolher Postgres em vez de Firestore ([DT-002](DECISOES.md)):
+
+```sql
+alter table appointments add constraint sem_sobreposicao
+  exclude using gist (
+    professional_id with =,
+    tstzrange(starts_at, ends_at) with &&
+  ) where (status in ('pendente', 'confirmado'));
+```
+
+Duas clientes agendando o mesmo horário no mesmo instante: o banco recusa a segunda. Isso **não** depende de o app ter checado antes — e é exatamente na disputa simultânea que a checagem no app falha, porque as duas leem "livre" antes de qualquer uma escrever.
+
+O `where` deixa de fora `cancelado` e `concluido`: horário cancelado volta a ficar livre, e atendimento concluído não deve bloquear uma remarcação no mesmo espaço.
+
+## Regras de acesso (RLS)
+
+RLS ligado em todas as tabelas. **Sem política, ninguém lê nem escreve** — o padrão é negar.
+
+| Tabela | Quem lê | Quem escreve |
+|---|---|---|
+| `services` | Qualquer um, se `active` | Ninguém ainda |
+| `professionals` | Qualquer um, se `active` | Ninguém ainda |
+| `business_hours` | Qualquer um | Ninguém ainda |
+| `clients` | Ninguém ainda | Ninguém ainda |
+| `appointments` | Ninguém ainda | Ninguém ainda |
+| `settings` | Ninguém ainda | Ninguém ainda |
+
+As três primeiras são o catálogo: a cliente precisa ver serviços e horários para conseguir agendar. Dados pessoais ficam fechados.
+
+"Ninguém ainda" muda na camada 2, quando o fluxo de agendamento entrar com as políticas específicas.
+
+## Conexão a partir do app
+
+`src/lib/supabase.ts`. As credenciais vêm de variáveis de ambiente:
+
+```
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY
+```
+
+Copie `.env.example` para `.env` e preencha. O `.env` não vai para o Git.
+
+A chave `anon` é pública por natureza — quem protege os dados é o RLS, não o segredo da chave. Já a `service_role` **ignora todas as políticas** e nunca deve entrar no app nem no repositório.
+
+## Dados de exemplo
+
+A migration insere serviços e horários fictícios (terça a sábado, 9h às 18h) para o app ter o que mostrar enquanto a tela de configuração não existe.
+
+> ⚠️ **A confirmar:** a lista real de serviços com preço e duração, e os dias e horários de atendimento.
