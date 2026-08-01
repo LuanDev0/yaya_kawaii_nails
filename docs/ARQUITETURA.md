@@ -72,11 +72,38 @@ Telas nunca declaram `fontFamily`. Use `<AppText variant="…">`, que já aplica
 
 `src/lib/supabase.ts` é o único ponto que conversa com o banco. Telas não montam consulta SQL nem chamam a API direto.
 
-A autenticação do Supabase está **desligada** (`persistSession: false`): a cliente se identifica por nome e telefone, sem senha ([DT-004](DECISOES.md)). Quem protege os dados são as políticas de acesso do banco, não uma sessão de login — o desenho das políticas está em [BANCO-DE-DADOS.md](BANCO-DE-DADOS.md).
+Quem protege os dados são as políticas de acesso do banco — o desenho delas está em [BANCO-DE-DADOS.md](BANCO-DE-DADOS.md).
 
 As credenciais vêm de `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY`. O prefixo `EXPO_PUBLIC_` é obrigatório: sem ele o Expo não expõe a variável ao código do app. Se faltar alguma, o app falha na abertura com uma mensagem dizendo o que fazer — melhor que uma tela em branco e `undefined` no console.
 
+## Autenticação
+
+Dois públicos, dois tratamentos:
+
+- **A cliente não tem login.** Identifica-se por nome e telefone ao agendar ([DT-004](DECISOES.md)).
+- **A dona entra com email e senha**, e a sessão é persistida — ela digita a senha uma vez ([DT-014](DECISOES.md)).
+
+`src/hooks/use-auth.tsx` expõe o estado de login. O ponto a entender é que ele devolve **dois** sinais diferentes:
+
+| Campo | Significa |
+|---|---|
+| `session` | Está autenticada em alguma conta |
+| `isOwner` | A conta corresponde a uma profissional ativa do salão |
+
+**As telas de gestão checam `isOwner`, nunca apenas `session`.** O Supabase permite cadastro aberto: alguém pode criar uma conta no projeto e ficar com `session` válida. Só o vínculo com `professionals` caracteriza a dona, e o banco aplica a mesma regra pelas políticas de acesso — a checagem na tela é conveniência, não é a proteção.
+
+`src/app/dona/_layout.tsx` é onde isso vira código: sem sessão, redireciona para `/entrar`; com sessão mas sem vínculo, mostra uma tela explicando que aquela conta não tem acesso.
+
+### Rotas
+
+| Rota | Quem usa |
+|---|---|
+| `/` | Prévia da identidade (temporária) |
+| `/entrar` | Login da dona |
+| `/dona/*` | Área de gestão, protegida |
+
 ## O que ainda não existe
 
-- **Divisão de rotas por público.** Hoje `src/app/index.tsx` é a tela de prévia da identidade. Na camada 2 entram os grupos `(cliente)` e `(dona)`, e essa tela sai.
-- **Escrita no banco.** As políticas de acesso hoje só permitem leitura do catálogo. Agendar, cadastrar cliente e aprovar entram na camada 2.
+- **Rotas da cliente.** O fluxo de agendamento é a camada 3.
+- **Telas de configuração.** Serviços, horários e preferências — camada 2, em construção.
+- **Escrita pela cliente.** As políticas hoje permitem escrita apenas para a dona.

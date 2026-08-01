@@ -1,12 +1,14 @@
 /**
  * Conexão com o Supabase.
  *
- * Não usamos a autenticação do Supabase: a cliente se identifica por nome e
- * telefone, sem senha (DT-004). Por isso sessão e refresh de token ficam
- * desligados — ligados, o cliente tentaria persistir uma sessão que não existe.
+ * A cliente não tem login: identifica-se por nome e telefone (DT-004). Já a
+ * dona entra com email e senha para poder gerenciar (DT-014) — por isso a
+ * sessão é persistida, e ela digita a senha uma vez só.
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -23,8 +25,14 @@ if (!url || !anonKey) {
 
 export const supabase = createClient(url, anonKey, {
   auth: {
-    persistSession: false,
-    autoRefreshToken: false,
+    // No navegador o Supabase já usa o localStorage sozinho; no celular
+    // precisa de um armazenamento explícito, senão a sessão morre ao fechar.
+    storage: Platform.OS === 'web' ? undefined : AsyncStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    // Só usamos email e senha. Sem link mágico nem OAuth, não há token
+    // chegando pela URL para o cliente vasculhar.
+    detectSessionInUrl: false,
   },
 });
 

@@ -116,16 +116,38 @@ RLS ligado em todas as tabelas. **Sem política, ninguém lê nem escreve** — 
 
 | Tabela | Quem lê | Quem escreve |
 |---|---|---|
-| `services` | Qualquer um, se `active` | Ninguém ainda |
-| `professionals` | Qualquer um, se `active` | Ninguém ainda |
-| `business_hours` | Qualquer um | Ninguém ainda |
-| `clients` | Ninguém ainda | Ninguém ainda |
-| `appointments` | Ninguém ainda | Ninguém ainda |
-| `settings` | Ninguém ainda | Ninguém ainda |
+| `services` | Qualquer um, se `active` · a dona vê todos | A dona |
+| `professionals` | Qualquer um, se `active` | A dona (só a própria linha) |
+| `business_hours` | Qualquer um | A dona |
+| `clients` | A dona | A dona |
+| `appointments` | A dona | A dona |
+| `settings` | A dona | A dona |
 
-As três primeiras são o catálogo: a cliente precisa ver serviços e horários para conseguir agendar. Dados pessoais ficam fechados.
+As três primeiras são o catálogo: a cliente precisa ver serviços e horários para conseguir agendar. Dados pessoais só a dona enxerga.
 
-"Ninguém ainda" muda na camada 2, quando o fluxo de agendamento entrar com as políticas específicas.
+A cliente ainda não escreve nada — o fluxo de agendamento entra na camada 3, com políticas próprias.
+
+### Quem é "a dona", do ponto de vista do banco
+
+Não é "quem está autenticado". O Supabase permite cadastro aberto, então essa definição trataria qualquer pessoa que criasse uma conta no projeto como administradora do salão.
+
+A tabela `professionals` tem uma coluna `auth_user_id` que aponta para `auth.users`. A função `is_owner()` verifica se existe uma profissional **ativa** cujo `auth_user_id` é o usuário logado, e é ela que todas as políticas de escrita consultam:
+
+```sql
+create or replace function is_owner()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from professionals
+    where auth_user_id = auth.uid() and active
+  );
+$$;
+```
+
+Uma conta criada por fora autentica normalmente, mas não corresponde a nenhuma linha e não enxerga nada.
+
+O `security definer` é necessário: a função precisa ler `professionals` ignorando o RLS dessa mesma tabela, senão a política que a chama entra em recursão infinita. O `set search_path` que acompanha impede que um schema no caminho de busca sequestre os nomes usados dentro dela — cuidado padrão com funções `security definer`.
+
+A conta é ligada à profissional por `supabase/migrations/0003_vincula_conta.sql`. O email real não fica versionado ali de propósito: é dado pessoal, e uma vez commitado permanece no histórico do git.
 
 ## Conexão a partir do app
 
