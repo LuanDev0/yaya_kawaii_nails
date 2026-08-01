@@ -1,6 +1,6 @@
 # Funcionalidades
 
-> **Nada aqui está implementado ainda.** Este documento registra o escopo acordado em julho de 2026, para servir de referência durante a construção. Cada funcionalidade indica em qual camada entra — a ordem está no [README](../README.md).
+> Escopo acordado em julho de 2026. Cada funcionalidade indica em qual camada entra — a ordem está no [README](../README.md). As camadas 1 e 2 estão construídas; da 3 em diante, este documento descreve o combinado, não o que existe.
 
 ## Perfis de usuário
 

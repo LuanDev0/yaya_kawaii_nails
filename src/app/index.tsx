@@ -14,7 +14,8 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { MaxContentWidth, Radius, Spacing, type ThemeColor } from '@/constants/theme';
 import { useTheme, type ThemeMode } from '@/hooks/use-theme';
-import { formatDuration, formatPrice, supabase, type Service } from '@/lib/supabase';
+import { formatDuration, formatPrice } from '@/lib/format';
+import { listActiveServices, type Service } from '@/lib/services';
 
 const MODES: { value: ThemeMode; label: string }[] = [
   { value: 'system', label: 'Sistema' },
@@ -108,15 +109,12 @@ function ServiceList() {
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from('services')
-      .select('*')
-      .order('sort_order')
-      .then(({ data, error: queryError }) => {
-        if (!active) return;
-
-        if (queryError) setError(queryError.message);
-        else setServices(data as Service[]);
+    listActiveServices()
+      .then((list) => {
+        if (active) setServices(list);
+      })
+      .catch((cause: Error) => {
+        if (active) setError(cause.message);
       });
 
     // Evita atualizar estado depois que a tela saiu, o que gera aviso no console.

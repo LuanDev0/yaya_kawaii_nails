@@ -70,7 +70,15 @@ Telas nunca declaram `fontFamily`. Use `<AppText variant="…">`, que já aplica
 
 ## Acesso a dados
 
-`src/lib/supabase.ts` é o único ponto que conversa com o banco. Telas não montam consulta SQL nem chamam a API direto.
+Só `src/lib/` conversa com o banco. Telas não chamam o Supabase direto — elas importam funções com nome de intenção, e é isso que mantém as consultas em um lugar só quando uma regra mudar.
+
+| Módulo | Cuida de |
+|---|---|
+| `supabase.ts` | O cliente e as credenciais |
+| `services.ts` | Serviços. `listActiveServices` é o que a cliente vê; `listAllServices` inclui desativados, para a dona |
+| `business-hours.ts` | Faixas por dia da semana |
+| `settings.ts` | A linha única de preferências |
+| `format.ts` | Preço, duração e horário — formatar e ler de volta |
 
 Quem protege os dados são as políticas de acesso do banco — o desenho delas está em [BANCO-DE-DADOS.md](BANCO-DE-DADOS.md).
 
@@ -96,11 +104,17 @@ Dois públicos, dois tratamentos:
 
 ### Rotas
 
-| Rota | Quem usa |
+| Rota | O que é |
 |---|---|
 | `/` | Prévia da identidade (temporária) |
 | `/entrar` | Login da dona |
-| `/dona/*` | Área de gestão, protegida |
+| `/dona` | Painel |
+| `/dona/servicos` | Lista de serviços |
+| `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
+| `/dona/horarios` | Dias e faixas de atendimento |
+| `/dona/preferencias` | Aprovação, cancelamento, prazo de retorno |
+
+Tudo sob `/dona` passa pelo guardião de `src/app/dona/_layout.tsx`.
 
 ## O que ainda não existe
 

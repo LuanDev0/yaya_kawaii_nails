@@ -36,28 +36,3 @@ export const supabase = createClient(url, anonKey, {
   },
 });
 
-/** Espelha a tabela `services`. Preço em centavos — ver comentário na migration. */
-export type Service = {
-  id: string;
-  name: string;
-  price_cents: number;
-  duration_minutes: number;
-  active: boolean;
-  sort_order: number;
-};
-
-/** Formata centavos como moeda: 12000 vira "R$ 120,00". */
-export function formatPrice(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-/** Formata duração em minutos: 150 vira "2h30". */
-export function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-
-  if (hours === 0) return `${rest}min`;
-  if (rest === 0) return `${hours}h`;
-
-  return `${hours}h${String(rest).padStart(2, '0')}`;
-}

@@ -4,9 +4,11 @@ Sistema de agendamento para salão de manicure, pedicure e nail design — gest�
 
 ## Status
 
-**Camada 1 concluída** (julho de 2026): projeto criado, identidade visual aplicada, componentes base prontos e banco de dados no ar. A tela inicial é uma prévia do tema que lista os serviços vindos do Supabase — serve para provar que a conexão funciona, não é uma funcionalidade. O app ainda não agenda nada.
+**Camadas 1 e 2 concluídas** (julho de 2026): projeto, identidade visual, banco de dados, login da dona e telas de configuração. Ela já entra no app e cadastra serviços, horários e preferências.
 
-Próximo passo: camada 2, login da dona e tela de configuração.
+A tela inicial ainda é uma prévia do tema, não uma funcionalidade — o app não agenda nada.
+
+Próximo passo: camada 3, o fluxo de agendamento.
 
 ## Como rodar
 

@@ -3,8 +3,8 @@
  *
  * Estar autenticado não basta para gerenciar o salão: o Supabase permite
  * cadastro aberto, então a conta precisa estar vinculada a uma profissional
- * (DT-014). Por isso este hook expõe `isOwner` além de `session` — as telas
- * de gestão checam `isOwner`, nunca apenas "tem sessão".
+ * (DT-014). Por isso este hook expõe `professional` — se vier null, a conta
+ * autenticou mas não administra nada.
  */
 
 import { type Session } from '@supabase/supabase-js';
@@ -12,9 +12,16 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 import { supabase } from '@/lib/supabase';
 
+export type Professional = {
+  id: string;
+  name: string;
+};
+
 type AuthContextValue = {
   session: Session | null;
-  /** A conta corresponde a uma profissional ativa. É isto que dá acesso. */
+  /** A profissional vinculada à conta. null = a conta não administra o salão. */
+  professional: Professional | null;
+  /** Atalho de leitura: `professional !== null`. */
   isOwner: boolean;
   /** true enquanto a sessão guardada ainda está sendo lida. */
   loading: boolean;
@@ -40,29 +47,37 @@ function translateError(message: string): string {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [isOwner, setIsOwner] = useState(false);
+  const [professional, setProfessional] = useState<Professional | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
 
-    async function resolveOwner(current: Session | null) {
+    /**
+     * A política "dona ve as profissionais" usa is_owner(), então esta consulta
+     * só devolve linha se o vínculo existir de verdade no banco. Ou seja: a
+     * própria busca é a verificação, não é preciso um passo separado.
+     */
+    async function loadProfessional(current: Session | null) {
       if (!current) {
-        if (active) setIsOwner(false);
+        if (active) setProfessional(null);
         return;
       }
 
-      const { data, error } = await supabase.rpc('is_owner');
+      const { data } = await supabase
+        .from('professionals')
+        .select('id, name')
+        .eq('auth_user_id', current.user.id)
+        .maybeSingle();
 
-      if (active) setIsOwner(!error && data === true);
+      if (active) setProfessional((data as Professional) ?? null);
     }
 
-    // Sessão guardada de uma abertura anterior.
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
 
       setSession(data.session);
-      await resolveOwner(data.session);
+      await loadProfessional(data.session);
 
       if (active) setLoading(false);
     });
@@ -71,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!active) return;
 
       setSession(next);
-      await resolveOwner(next);
+      await loadProfessional(next);
     });
 
     return () => {
@@ -83,7 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
-      isOwner,
+      professional,
+      isOwner: professional !== null,
       loading,
       async signIn(email, password) {
         const { error } = await supabase.auth.signInWithPassword({
@@ -97,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     }),
-    [session, isOwner, loading],
+    [session, professional, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

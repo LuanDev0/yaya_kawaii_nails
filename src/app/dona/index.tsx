@@ -1,12 +1,7 @@
-/**
- * Painel da dona.
- *
- * Por enquanto confirma quem está logada e dá acesso à configuração. A agenda
- * entra na camada 3.
- */
+/** Painel da dona. A agenda entra na camada 3; por ora, a configuração. */
 
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -15,33 +10,18 @@ import { Card } from '@/components/card';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
-import { supabase } from '@/lib/supabase';
+
+const LINKS = [
+  { href: '/dona/servicos', title: 'Serviços', hint: 'Nome, preço e duração' },
+  { href: '/dona/horarios', title: 'Horários', hint: 'Dias e faixas de atendimento' },
+  { href: '/dona/preferencias', title: 'Preferências', hint: 'Aprovação, cancelamento, retorno' },
+] as const;
 
 export default function OwnerHomeScreen() {
   const { colors } = useTheme();
-  const { session, signOut } = useAuth();
+  const { session, professional, signOut } = useAuth();
   const insets = useSafeAreaInsets();
-
-  const [name, setName] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    // Só retorna algo se a política "dona ve as profissionais" reconhecer a
-    // conta. Serve de prova de que o vínculo está valendo no banco.
-    supabase
-      .from('professionals')
-      .select('name')
-      .eq('auth_user_id', session?.user.id ?? '')
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active) setName(data?.name ?? null);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [session?.user.id]);
+  const router = useRouter();
 
   return (
     <ScrollView
@@ -54,49 +34,65 @@ export default function OwnerHomeScreen() {
         <AppText variant="title">Painel</AppText>
 
         <Card style={styles.card}>
-          {name === null ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <>
-              <AppText variant="label" color="textSecondary">
-                CONECTADA COMO
-              </AppText>
-              <AppText variant="heading" style={styles.name}>
-                {name}
-              </AppText>
-              <AppText variant="support" color="textSecondary">
-                {session?.user.email}
-              </AppText>
-            </>
-          )}
+          <AppText variant="label" color="textSecondary">
+            CONECTADA COMO
+          </AppText>
+          <AppText variant="heading" style={styles.name}>
+            {professional?.name}
+          </AppText>
+          <AppText variant="support" color="textSecondary">
+            {session?.user.email}
+          </AppText>
         </Card>
 
-        <AppText variant="body" color="textSecondary" style={styles.pending}>
-          A agenda e as telas de configuração entram nos próximos passos.
+        <AppText variant="label" color="textSecondary" style={styles.sectionTitle}>
+          CONFIGURAÇÃO
         </AppText>
 
-        <Button label="Sair" variant="secondary" onPress={signOut} />
+        <Card>
+          {LINKS.map((link, index) => (
+            <Pressable
+              key={link.href}
+              accessibilityRole="button"
+              onPress={() => router.push(link.href)}
+              style={({ pressed }) => [
+                styles.row,
+                index > 0 && { borderTopWidth: 1, borderTopColor: colors.border },
+                pressed && { opacity: 0.6 },
+              ]}>
+              <View style={styles.rowText}>
+                <AppText variant="bodyBold">{link.title}</AppText>
+                <AppText variant="support" color="textSecondary">
+                  {link.hint}
+                </AppText>
+              </View>
+              <AppText variant="bodyBold" color="textAccent">
+                ›
+              </AppText>
+            </Pressable>
+          ))}
+        </Card>
+
+        <View style={styles.footer}>
+          <Button label="Sair" variant="secondary" onPress={signOut} />
+        </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.three,
+  content: { paddingHorizontal: Spacing.three },
+  inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
+  card: { marginTop: Spacing.four },
+  name: { marginTop: Spacing.one },
+  sectionTitle: { marginTop: Spacing.five, marginBottom: Spacing.two, letterSpacing: 1 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.three,
   },
-  inner: {
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-  },
-  card: {
-    marginTop: Spacing.four,
-  },
-  name: {
-    marginTop: Spacing.one,
-  },
-  pending: {
-    marginVertical: Spacing.four,
-  },
+  rowText: { flex: 1, paddingRight: Spacing.two },
+  footer: { marginTop: Spacing.five },
 });
