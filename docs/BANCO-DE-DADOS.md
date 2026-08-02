@@ -173,6 +173,34 @@ Duas clientes agendando o mesmo horário no mesmo instante: o banco recusa a seg
 
 O `where` deixa de fora `cancelado` e `concluido`: horário cancelado volta a ficar livre, e atendimento concluído não deve bloquear uma remarcação no mesmo espaço.
 
+## As três funções que a cliente usa
+
+A cliente não lê nem escreve nas tabelas de agendamento. Ela chama funções que rodam dentro do banco com acesso privilegiado e devolvem só o necessário.
+
+| Função | Recebe | Devolve |
+|---|---|---|
+| `available_slots(servico, data)` | Serviço e data | Lista de horários vagos |
+| `book_appointment(servico, horario, nome, telefone)` | O essencial | O código do agendamento criado |
+| `appointment_details(codigo)` | O código | Aquele agendamento |
+
+### Por que não abrir as tabelas
+
+**Para ler:** calcular a disponibilidade no app exigiria baixar os agendamentos para o navegador dela — e aí nome, telefone e serviço das outras clientes já vazaram. Esconder na tela não desfaz o download.
+
+**Para escrever:** com acesso direto ao `insert`, ela escolheria o que gravar, inclusive o preço. Validar na tela não protege, porque a tela roda no navegador dela.
+
+### A validação e a listagem usam o mesmo caminho
+
+`book_appointment` não reconfere expediente, exceção, antecedência e colisão por conta própria. Ela pergunta se o horário pedido está entre os que `available_slots` ofereceria.
+
+Isso elimina a classe de bug em que a tela mostra um horário que o gravador recusa — ou pior, aceita um que não deveria.
+
+### Como a cliente vê o agendamento depois
+
+Sem senha (DT-004), o código do agendamento é a prova de posse: um identificador aleatório, guardado no navegador que o criou. Quem não tem o código não descobre nada.
+
+**Não existe busca por telefone**, de propósito: ela deixaria qualquer pessoa que saiba o número de outra ver o histórico dela.
+
 ## Regras de acesso (RLS)
 
 RLS ligado em todas as tabelas. **Sem política, ninguém lê nem escreve** — o padrão é negar.
