@@ -35,6 +35,8 @@ Profissionais que atendem. Uma linha por enquanto ([DT-007](DECISOES.md)).
 | `price_cents` | integer | Preço cheio, em **centavos** — ver abaixo |
 | `discount_kind` | text | `valor` ou `percentual`. Nulo = sem promoção |
 | `discount_value` | integer | Centavos se `valor`; de 1 a 100 se `percentual` |
+| `discount_starts_on` | date | Nulo = vale desde já |
+| `discount_ends_on` | date | Nulo = vale até ser removida. **Inclusiva** |
 | `duration_minutes` | integer | Duração do atendimento. É o que a cliente vê |
 | `buffer_minutes` | integer | Arrumação depois. Bloqueia a agenda sem aparecer para a cliente ([DT-017](DECISOES.md)) |
 | `active` | boolean | |
@@ -135,6 +137,10 @@ O erro, se esquecer, é `permission denied for table schedule_exceptions` — qu
 `discount_kind` e `discount_value` ficam em colunas próprias em vez de baixar `price_cents`.
 
 Assim o valor cheio não se perde: encerrada a promoção, basta limpar o desconto e o preço volta sozinho, sem ninguém precisar lembrar qual era. E a cliente pode ver "de R$ 120 por R$ 96" — que vende bem mais que só "R$ 96".
+
+O prazo é opcional dos dois lados: sem início, vale desde já; sem fim, vale até ser removida à mão. Com início no futuro, a promoção fica **agendada** e entra sozinha na data.
+
+**`discount_ends_on` é inclusiva.** "Até 31/05" tem desconto no dia 31 — é como as pessoas leem uma promoção, e o contrário renderia reclamação legítima de cliente no último dia.
 
 O cálculo fica em `src/lib/pricing.ts`, separado do acesso ao banco para poder ser testado sozinho.
 

@@ -85,6 +85,12 @@ Só `src/lib/` conversa com o banco. Telas não chamam o Supabase direto — ela
 
 `pricing.ts` e `calendar.ts` não tocam no banco de propósito: são as duas contas que dão errado em silêncio — centavo de arredondamento e virada de mês — e ficar fora da camada de dados permite testá-las sem subir o app.
 
+`pricing.ts` vai além e **não importa nada**, nem o calendário: a data de hoje entra por parâmetro. Uma função que consulta o relógio por dentro não pode ser exercitada em outra data, e "só quebra dia 31" é o tipo de defeito que ninguém reproduz. Quem chama passa `todayISO()`.
+
+### Formato de data na interface
+
+A dona escreve `31/05/2026`; o banco guarda `2026-05-31`. `parseBRDate` faz a tradução e recusa data que não existe no calendário, como `31/02`. O formato do banco não é o formato de quem usa o app.
+
 ### Datas circulam como texto, nunca como `Date`
 
 `calendar.ts` trabalha com `"AAAA-MM-DD"`. Um `Date` é um instante no tempo, e converter instante para dia depende de fuso: `2026-08-10T00:00Z` é dia 9 no Brasil.

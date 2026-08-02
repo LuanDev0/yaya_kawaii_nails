@@ -37,7 +37,9 @@ As setas na lista mudam a ordem em que a cliente vê os serviços.
 
 Desativar em vez de apagar: serviço que já foi agendado não pode sumir, senão o histórico e o faturamento ficam com buracos.
 
-**Promoção.** Cada serviço aceita um desconto, em valor fixo ou em porcentagem. O preço cheio continua guardado, então encerrar a promoção é só limpar o desconto — e a cliente vê "de R$ 120 por R$ 96", que comunica melhor que só o valor final.
+**Promoção.** Cada serviço aceita um desconto, em valor fixo ou em porcentagem, com prazo de início e fim. O preço cheio continua guardado, então a promoção acaba sozinha e o valor volta — e a cliente vê "de R$ 120 por R$ 96", que comunica melhor que só o valor final.
+
+Os dois prazos são opcionais. Com início no futuro, a promoção fica agendada e entra sozinha no dia; a data final vale até o último dia, inclusive.
 
 Cada serviço também declara seu **tempo de arrumação** — os minutos de limpeza e preparo depois do atendimento. Depende do procedimento, não do salão ([DT-017](DECISOES.md)): a agenda bloqueia esse tempo, e a cliente não o vê.
 
