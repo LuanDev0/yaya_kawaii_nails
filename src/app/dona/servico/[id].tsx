@@ -13,7 +13,8 @@ import { TextField } from '@/components/text-field';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { addMinutes, formatDuration, formatPrice, parsePrice } from '@/lib/format';
-import { finalPriceCents } from '@/lib/pricing';
+import { formatISODate, parseBRDate, todayISO } from '@/lib/calendar';
+import { discountState, finalPriceCents } from '@/lib/pricing';
 import { createService, getService, listAllServices, updateService } from '@/lib/services';
 
 export default function ServiceFormScreen() {
@@ -30,6 +31,8 @@ export default function ServiceFormScreen() {
   const [buffer, setBuffer] = useState('0');
   const [discountKind, setDiscountKind] = useState<'nenhum' | 'valor' | 'percentual'>('nenhum');
   const [discountValue, setDiscountValue] = useState('');
+  const [discountFrom, setDiscountFrom] = useState('');
+  const [discountTo, setDiscountTo] = useState('');
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -55,6 +58,8 @@ export default function ServiceFormScreen() {
               ? String(service.discount_value)
               : '',
         );
+        setDiscountFrom(service.discount_starts_on ? formatISODate(service.discount_starts_on) : '');
+        setDiscountTo(service.discount_ends_on ? formatISODate(service.discount_ends_on) : '');
       })
       .catch((cause: Error) => active && setErrors({ form: cause.message }))
       .finally(() => active && setLoading(false));
@@ -86,14 +91,28 @@ export default function ServiceFormScreen() {
       discountParsed > 0 &&
       (discountKind === 'valor' || discountParsed <= 100));
 
-  const preview =
-    priceCents !== null && discountOk
-      ? finalPriceCents({
+  // Campo vazio significa "sem limite daquele lado", não erro.
+  const fromISO = discountFrom.trim() ? parseBRDate(discountFrom) : null;
+  const toISO = discountTo.trim() ? parseBRDate(discountTo) : null;
+  const datesOk =
+    (!discountFrom.trim() || fromISO !== null) &&
+    (!discountTo.trim() || toISO !== null) &&
+    (!fromISO || !toISO || toISO >= fromISO);
+
+  const promo =
+    priceCents !== null && discountOk && datesOk
+      ? {
           price_cents: priceCents,
           discount_kind: discountKind === 'nenhum' ? null : discountKind,
           discount_value: discountParsed,
-        })
+          discount_starts_on: fromISO,
+          discount_ends_on: toISO,
+        }
       : null;
+
+  const today = todayISO();
+  const preview = promo ? finalPriceCents(promo, today) : null;
+  const state = promo ? discountState(promo, today) : 'nenhuma';
 
   async function handleSave() {
     const found: Record<string, string> = {};
@@ -108,6 +127,7 @@ export default function ServiceFormScreen() {
           ? 'Valor do desconto inválido. Escreva algo como 20,00.'
           : 'Porcentagem de 1 a 100.';
     }
+    if (!datesOk) found.dates = 'Use o formato 31/05/2026, e o fim depois do início.';
 
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -125,6 +145,8 @@ export default function ServiceFormScreen() {
           price_cents: priceCents!,
           discount_kind: discountKind === 'nenhum' ? null : discountKind,
           discount_value: discountKind === 'nenhum' ? null : discountParsed,
+          discount_starts_on: discountKind === 'nenhum' ? null : fromISO,
+          discount_ends_on: discountKind === 'nenhum' ? null : toISO,
           duration_minutes: durationMinutes,
           buffer_minutes: bufferMinutes,
           active: true,
@@ -136,6 +158,8 @@ export default function ServiceFormScreen() {
           price_cents: priceCents!,
           discount_kind: discountKind === 'nenhum' ? null : discountKind,
           discount_value: discountKind === 'nenhum' ? null : discountParsed,
+          discount_starts_on: discountKind === 'nenhum' ? null : fromISO,
+          discount_ends_on: discountKind === 'nenhum' ? null : toISO,
           duration_minutes: durationMinutes,
           buffer_minutes: bufferMinutes,
         });
@@ -249,16 +273,58 @@ export default function ServiceFormScreen() {
           />
         ) : null}
 
-        {preview !== null && priceCents !== null && preview !== priceCents ? (
-          <Card style={styles.example}>
-            <AppText variant="support" color="textSecondary">
-              A cliente vê{' '}
-              <AppText variant="support" style={styles.struck}>
-                {formatPrice(priceCents)}
-              </AppText>{' '}
-              por <AppText variant="label">{formatPrice(preview)}</AppText>. O preço cheio continua
-              guardado — encerrando a promoção, ele volta sozinho.
+        {discountKind !== 'nenhum' ? (
+          <>
+            <View style={styles.times}>
+              <View style={styles.timeField}>
+                <TextField
+                  label="Começa em"
+                  value={discountFrom}
+                  onChangeText={setDiscountFrom}
+                  placeholder="hoje"
+                  editable={!saving}
+                />
+              </View>
+              <View style={styles.timeField}>
+                <TextField
+                  label="Termina em"
+                  value={discountTo}
+                  onChangeText={setDiscountTo}
+                  placeholder="sem prazo"
+                  editable={!saving}
+                  error={errors.dates}
+                />
+              </View>
+            </View>
+            <AppText variant="support" color="textSecondary" style={styles.hint}>
+              Formato 31/05/2026. Em branco significa sem limite daquele lado, e o último dia ainda
+              tem desconto.
             </AppText>
+          </>
+        ) : null}
+
+        {promo && priceCents !== null && state !== 'nenhuma' ? (
+          <Card style={styles.example}>
+            {state === 'ativa' ? (
+              <AppText variant="support" color="textSecondary">
+                Valendo hoje. A cliente vê{' '}
+                <AppText variant="support" style={styles.struck}>
+                  {formatPrice(priceCents)}
+                </AppText>{' '}
+                por <AppText variant="label">{formatPrice(preview!)}</AppText>. O preço cheio
+                continua guardado.
+              </AppText>
+            ) : state === 'agendada' ? (
+              <AppText variant="support" color="textSecondary">
+                Agendada para <AppText variant="label">{discountFrom}</AppText>. Até lá a cliente
+                continua vendo {formatPrice(priceCents)}, e no dia o desconto entra sozinho.
+              </AppText>
+            ) : (
+              <AppText variant="support" color="textSecondary">
+                Já terminou, em <AppText variant="label">{discountTo}</AppText>. A cliente vê{' '}
+                {formatPrice(priceCents)}. Para reativar, mude o prazo.
+              </AppText>
+            )}
           </Card>
         ) : null}
 
@@ -331,5 +397,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   struck: { textDecorationLine: 'line-through' },
+  times: { flexDirection: 'row', gap: Spacing.three },
+  timeField: { flex: 1 },
   footer: { marginTop: Spacing.three },
 });

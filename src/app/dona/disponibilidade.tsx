@@ -22,6 +22,7 @@ import {
   MONTH_NAMES,
   formatISODate,
   monthWeeks,
+  parseBRDate,
   todayISO,
   toISODate,
   weekdayOf,
@@ -415,18 +416,19 @@ function PeriodCloser({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
-
   async function handleClose() {
     setError(null);
 
-    if (!isDate(from) || !isDate(to)) return setError('Use o formato 2026-08-10.');
-    if (to < from) return setError('A data final precisa ser depois da inicial.');
+    const fromISO = parseBRDate(from);
+    const toISO = parseBRDate(to);
+
+    if (!fromISO || !toISO) return setError('Use o formato 10/08/2026.');
+    if (toISO < fromISO) return setError('A data final precisa ser depois da inicial.');
 
     setSaving(true);
 
     try {
-      const total = await closePeriod(professionalId, from, to, note.trim() || null);
+      const total = await closePeriod(professionalId, fromISO, toISO, note.trim() || null);
       await onDone(`${total} dia${total > 1 ? 's' : ''} marcado${total > 1 ? 's' : ''} sem atendimento.`);
       setFrom('');
       setTo('');
@@ -451,7 +453,7 @@ function PeriodCloser({
             label="De"
             value={from}
             onChangeText={setFrom}
-            placeholder="2026-08-10"
+            placeholder="10/08/2026"
             editable={!saving}
           />
         </View>
@@ -460,7 +462,7 @@ function PeriodCloser({
             label="Até"
             value={to}
             onChangeText={setTo}
-            placeholder="2026-08-17"
+            placeholder="17/08/2026"
             editable={!saving}
           />
         </View>

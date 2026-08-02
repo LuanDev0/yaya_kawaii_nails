@@ -14,6 +14,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { MaxContentWidth, Radius, Spacing, type ThemeColor } from '@/constants/theme';
 import { useTheme, type ThemeMode } from '@/hooks/use-theme';
+import { todayISO } from '@/lib/calendar';
 import { formatDuration, formatPrice } from '@/lib/format';
 import { finalPriceCents, hasDiscount } from '@/lib/pricing';
 import { listActiveServices, type Service } from '@/lib/services';
@@ -106,6 +107,7 @@ function ServiceList() {
   const { colors } = useTheme();
   const [services, setServices] = useState<Service[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const today = todayISO();
 
   useEffect(() => {
     let active = true;
@@ -159,13 +161,13 @@ function ServiceList() {
             </AppText>
           </View>
           <View style={styles.priceColumn}>
-            {hasDiscount(service) ? (
+            {hasDiscount(service, today) ? (
               <AppText variant="support" color="textSecondary" style={styles.struck}>
                 {formatPrice(service.price_cents)}
               </AppText>
             ) : null}
             <AppText variant="bodyBold" color="textAccent">
-              {formatPrice(finalPriceCents(service))}
+              {formatPrice(finalPriceCents(service, today))}
             </AppText>
           </View>
         </View>

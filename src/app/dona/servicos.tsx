@@ -12,7 +12,8 @@ import { ScreenHeader } from '@/components/screen-header';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDuration, formatPrice } from '@/lib/format';
-import { finalPriceCents, hasDiscount } from '@/lib/pricing';
+import { formatISODate, todayISO } from '@/lib/calendar';
+import { discountState, finalPriceCents, hasDiscount } from '@/lib/pricing';
 import { listAllServices, reorderServices, setServiceActive, type Service } from '@/lib/services';
 
 export default function ServicesScreen() {
@@ -22,6 +23,10 @@ export default function ServicesScreen() {
 
   const [services, setServices] = useState<Service[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // As funções de preço não consultam o relógio por dentro: a data entra por
+  // parâmetro, para poderem ser testadas em qualquer dia.
+  const today = todayISO();
 
   // Recarrega ao voltar do formulário, senão a lista mostraria dado velho.
   useFocusEffect(
@@ -149,13 +154,13 @@ export default function ServicesScreen() {
                   </View>
 
                   <View style={styles.priceLine}>
-                    {hasDiscount(service) ? (
+                    {hasDiscount(service, today) ? (
                       <>
                         <AppText variant="support" color="textSecondary" style={styles.struck}>
                           {formatPrice(service.price_cents)}
                         </AppText>
                         <AppText variant="label" color="textAccent">
-                          {formatPrice(finalPriceCents(service))}
+                          {formatPrice(finalPriceCents(service, today))}
                         </AppText>
                       </>
                     ) : (
@@ -170,6 +175,16 @@ export default function ServicesScreen() {
                       {service.active ? '' : ' · desativado'}
                     </AppText>
                   </View>
+
+                  {discountState(service, today) === 'agendada' ? (
+                    <AppText variant="label" color="textAccent">
+                      Promoção começa em {formatISODate(service.discount_starts_on!)}
+                    </AppText>
+                  ) : discountState(service, today) === 'encerrada' ? (
+                    <AppText variant="label" color="textSecondary">
+                      Promoção encerrada em {formatISODate(service.discount_ends_on!)}
+                    </AppText>
+                  ) : null}
                 </Pressable>
 
                 <Switch

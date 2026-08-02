@@ -37,6 +37,26 @@ export function formatISODate(date: ISODate): string {
   return `${day}/${month}/${year}`;
 }
 
+/**
+ * Lê uma data escrita como a dona escreve: "31/05/2026" vira "2026-05-31".
+ * Devolve null se não der para entender.
+ *
+ * A interface fala o formato dela; o banco continua com o dele.
+ */
+export function parseBRDate(input: string): ISODate | null {
+  const match = input.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+  const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+  // Recusa 31/02: a data existe no texto, mas não no calendário.
+  const check = new Date(Number(year), Number(month) - 1, Number(day));
+  if (check.getMonth() !== Number(month) - 1 || check.getDate() !== Number(day)) return null;
+
+  return iso;
+}
+
 export const MONTH_NAMES = [
   'janeiro',
   'fevereiro',

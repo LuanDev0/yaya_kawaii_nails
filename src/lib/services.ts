@@ -4,7 +4,7 @@ import { type DiscountKind } from '@/lib/pricing';
 import { supabase } from '@/lib/supabase';
 
 const SERVICE_COLUMNS =
-  'id, name, price_cents, discount_kind, discount_value, duration_minutes, buffer_minutes, active, sort_order';
+  'id, name, price_cents, discount_kind, discount_value, discount_starts_on, discount_ends_on, duration_minutes, buffer_minutes, active, sort_order';
 
 export type Service = {
   id: string;
@@ -14,6 +14,10 @@ export type Service = {
   discount_kind: DiscountKind;
   /** Centavos quando `valor`; de 1 a 100 quando `percentual`. */
   discount_value: number | null;
+  /** Nulo = vale desde já. */
+  discount_starts_on: string | null;
+  /** Nulo = vale até ser removida. Data **inclusiva**. */
+  discount_ends_on: string | null;
   /** Duração do atendimento. É o que a cliente vê. */
   duration_minutes: number;
   /** Arrumação depois do atendimento. Bloqueia a agenda sem aparecer para a
@@ -28,6 +32,8 @@ export type ServiceInput = {
   price_cents: number;
   discount_kind: DiscountKind;
   discount_value: number | null;
+  discount_starts_on: string | null;
+  discount_ends_on: string | null;
   duration_minutes: number;
   buffer_minutes: number;
   active: boolean;
