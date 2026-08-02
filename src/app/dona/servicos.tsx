@@ -68,7 +68,7 @@ export default function ServicesScreen() {
       <View style={styles.inner}>
         <ScreenHeader
           title="Serviços"
-          subtitle="Desativar tira do cardápio da cliente sem apagar o histórico."
+          subtitle="Toque num serviço para editar. A chave ativa e desativa — desativado sai do cardápio da cliente sem apagar o histórico."
         />
 
         {error ? (
@@ -98,11 +98,20 @@ export default function ServicesScreen() {
                 ]}>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={`Editar ${service.name}`}
                   onPress={() => router.push(`/dona/servico/${service.id}`)}
                   style={({ pressed }) => [styles.rowText, pressed && { opacity: 0.6 }]}>
-                  <AppText variant="bodyBold" color={service.active ? 'textPrimary' : 'textSecondary'}>
-                    {service.name}
-                  </AppText>
+                  <View style={styles.rowTitle}>
+                    <AppText
+                      variant="bodyBold"
+                      color={service.active ? 'textPrimary' : 'textSecondary'}
+                      style={styles.rowName}>
+                      {service.name}
+                    </AppText>
+                    <AppText variant="bodyBold" color="textAccent">
+                      ›
+                    </AppText>
+                  </View>
                   <AppText variant="support" color="textSecondary">
                     {formatPrice(service.price_cents)} · {formatDuration(service.duration_minutes)}
                     {service.buffer_minutes > 0 ? ` + ${service.buffer_minutes}min de arrumação` : ''}
@@ -142,5 +151,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   rowText: { flex: 1 },
+  rowTitle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  rowName: { flex: 1, paddingRight: Spacing.two },
   footer: { marginTop: Spacing.four },
 });
