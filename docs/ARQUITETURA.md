@@ -77,8 +77,18 @@ Só `src/lib/` conversa com o banco. Telas não chamam o Supabase direto — ela
 | `supabase.ts` | O cliente e as credenciais |
 | `services.ts` | Serviços. `listActiveServices` é o que a cliente vê; `listAllServices` inclui desativados, para a dona |
 | `business-hours.ts` | Faixas por dia da semana |
+| `schedule-exceptions.ts` | Ajustes por data que substituem o padrão semanal |
 | `settings.ts` | A linha única de preferências |
 | `format.ts` | Preço, duração e horário — formatar e ler de volta |
+| `calendar.ts` | Datas e a grade do mês |
+
+### Datas circulam como texto, nunca como `Date`
+
+`calendar.ts` trabalha com `"AAAA-MM-DD"`. Um `Date` é um instante no tempo, e converter instante para dia depende de fuso: `2026-08-10T00:00Z` é dia 9 no Brasil.
+
+O sintoma disso aparece só para quem agenda perto da meia-noite, que é justamente o caso mais difícil de reproduzir e o mais fácil de culpar o usuário. Texto de data não tem essa ambiguidade.
+
+As funções são puras e cobertas por teste de virada de mês, virada de ano e ano bissexto.
 
 Quem protege os dados são as políticas de acesso do banco — o desenho delas está em [BANCO-DE-DADOS.md](BANCO-DE-DADOS.md).
 
@@ -111,7 +121,8 @@ Dois públicos, dois tratamentos:
 | `/dona` | Painel |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
-| `/dona/horarios` | Dias e faixas de atendimento |
+| `/dona/horarios` | Padrão semanal de atendimento |
+| `/dona/disponibilidade` | Calendário de exceções: folgas, férias, dias fora do padrão |
 | `/dona/preferencias` | Aprovação, cancelamento, prazo de retorno |
 
 Tudo sob `/dona` passa pelo guardião de `src/app/dona/_layout.tsx`.

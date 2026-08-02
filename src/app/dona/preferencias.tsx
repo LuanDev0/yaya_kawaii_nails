@@ -24,9 +24,11 @@ export default function PreferencesScreen() {
 
   const [settings, setSettings] = useState<Settings | null>(null);
   const [reminderDays, setReminderDays] = useState('');
+  const [windowDays, setWindowDays] = useState('');
+  const [noticeHours, setNoticeHours] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [daysError, setDaysError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let active = true;
@@ -37,6 +39,8 @@ export default function PreferencesScreen() {
 
         setSettings(data);
         setReminderDays(String(data.maintenance_reminder_days));
+        setWindowDays(String(data.booking_window_days));
+        setNoticeHours(String(data.minimum_notice_hours));
       })
       .catch((cause: Error) => active && setMessage(cause.message));
 
@@ -49,18 +53,27 @@ export default function PreferencesScreen() {
     if (!settings) return;
 
     const days = Number(reminderDays);
+    const window = Number(windowDays);
+    const notice = Number(noticeHours);
 
-    if (!Number.isInteger(days) || days <= 0) {
-      setDaysError('Um número de dias maior que zero.');
-      return;
-    }
+    const found: Record<string, string> = {};
+    if (!Number.isInteger(days) || days <= 0) found.days = 'Um número de dias maior que zero.';
+    if (!Number.isInteger(window) || window <= 0) found.window = 'Um número de dias maior que zero.';
+    if (!Number.isInteger(notice) || notice < 0) found.notice = 'Um número de horas, zero ou mais.';
 
-    setDaysError(null);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+
     setSaving(true);
     setMessage(null);
 
     try {
-      await updateSettings({ ...settings, maintenance_reminder_days: days });
+      await updateSettings({
+        ...settings,
+        maintenance_reminder_days: days,
+        booking_window_days: window,
+        minimum_notice_hours: notice,
+      });
       setMessage('Preferências salvas.');
     } catch (cause) {
       setMessage((cause as Error).message);
@@ -140,10 +153,44 @@ export default function PreferencesScreen() {
                 keyboardType="number-pad"
                 inputMode="numeric"
                 editable={!saving}
-                error={daysError}
+                error={errors.days}
               />
               <AppText variant="support" color="textSecondary" style={styles.hint}>
                 Depois desse tempo sem voltar, a cliente aparece na sua lista de retorno.
+              </AppText>
+            </View>
+
+            <View style={styles.field}>
+              <TextField
+                label="Agenda aberta por, em dias"
+                value={windowDays}
+                onChangeText={setWindowDays}
+                placeholder="14"
+                keyboardType="number-pad"
+                inputMode="numeric"
+                editable={!saving}
+                error={errors.window}
+              />
+              <AppText variant="support" color="textSecondary" style={styles.hint}>
+                Até quantos dias à frente a cliente consegue marcar. Janela curta evita você ficar
+                presa a horário combinado antes de saber se poderá cumprir.
+              </AppText>
+            </View>
+
+            <View style={styles.field}>
+              <TextField
+                label="Antecedência mínima, em horas"
+                value={noticeHours}
+                onChangeText={setNoticeHours}
+                placeholder="3"
+                keyboardType="number-pad"
+                inputMode="numeric"
+                editable={!saving}
+                error={errors.notice}
+              />
+              <AppText variant="support" color="textSecondary" style={styles.hint}>
+                Quanto tempo antes, no mínimo, a cliente pode marcar. Zero aceita encaixe para
+                daqui a pouco.
               </AppText>
             </View>
 

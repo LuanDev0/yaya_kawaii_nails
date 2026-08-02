@@ -35,9 +35,27 @@ Cadastrar, editar, reordenar e desativar. Cada serviço tem nome, preço e dura�
 
 Desativar em vez de apagar: serviço que já foi agendado não pode sumir, senão o histórico e o faturamento ficam com buracos.
 
+Cada serviço também declara seu **tempo de arrumação** — os minutos de limpeza e preparo depois do atendimento. Depende do procedimento, não do salão ([DT-017](DECISOES.md)): a agenda bloqueia esse tempo, e a cliente não o vê.
+
 ### Horários de atendimento
 
-Que dias da semana atende e de que hora a que hora.
+O padrão semanal: que dias atende e de que hora a que hora.
+
+### Disponibilidade
+
+O calendário onde a dona ajusta as datas que fogem do padrão ([DT-016](DECISOES.md)). Tocando num dia, ela escolhe:
+
+| Opção | Efeito |
+|---|---|
+| Padrão | Aquele dia volta a seguir o padrão semanal |
+| Não atender | Fecha o dia, mesmo que o padrão diga que atende |
+| Horário diferente | Uma faixa própria só naquela data |
+
+Há também um atalho para fechar um período inteiro — férias, viagem — sem marcar dia por dia.
+
+Cada exceção aceita um motivo, visível só para a dona. A cliente enxerga que o dia está fechado, não o porquê.
+
+**Como usar sem ter rotina fixa:** deixando o padrão semanal vazio e abrindo data por data, o mesmo calendário atende quem não tem semana igual à outra.
 
 ### Preferências
 
@@ -46,6 +64,8 @@ Que dias da semana atende e de que hora a que hora.
 | Aprovar cada agendamento | ligado | Desligado, o horário já nasce confirmado |
 | Cliente pode cancelar sozinha | ligado | Desligado, ela precisa falar com a dona |
 | Prazo de retorno | 21 dias | Quantos dias até a cliente entrar na lista de quem está na hora de voltar |
+| Agenda aberta por | 14 dias | Até quando à frente a cliente consegue marcar |
+| Antecedência mínima | 3 horas | Quanto tempo antes, no mínimo, ela pode marcar |
 
 As duas primeiras são chaves justamente para poderem mudar sem mexer no código ([DT-008](DECISOES.md)).
 

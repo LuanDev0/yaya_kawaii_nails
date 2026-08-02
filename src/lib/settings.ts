@@ -11,13 +11,17 @@ export type Settings = {
   require_approval: boolean;
   allow_client_cancel: boolean;
   maintenance_reminder_days: number;
+  /** Até quantos dias à frente a agenda aceita marcação. */
+  booking_window_days: number;
+  /** Antecedência mínima para marcar, em horas. */
+  minimum_notice_hours: number;
 };
 
+const COLUMNS =
+  'require_approval, allow_client_cancel, maintenance_reminder_days, booking_window_days, minimum_notice_hours';
+
 export async function getSettings(): Promise<Settings | null> {
-  const { data, error } = await supabase
-    .from('settings')
-    .select('require_approval, allow_client_cancel, maintenance_reminder_days')
-    .maybeSingle();
+  const { data, error } = await supabase.from('settings').select(COLUMNS).maybeSingle();
 
   if (error) throw new Error(error.message);
   return (data as Settings) ?? null;

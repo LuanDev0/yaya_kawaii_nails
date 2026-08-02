@@ -13,7 +13,8 @@ import { useTheme } from '@/hooks/use-theme';
 
 const LINKS = [
   { href: '/dona/servicos', title: 'Serviços', hint: 'Nome, preço e duração' },
-  { href: '/dona/horarios', title: 'Horários', hint: 'Dias e faixas de atendimento' },
+  { href: '/dona/horarios', title: 'Horários', hint: 'Padrão semanal de atendimento' },
+  { href: '/dona/disponibilidade', title: 'Disponibilidade', hint: 'Folgas, férias e dias fora do padrão' },
   { href: '/dona/preferencias', title: 'Preferências', hint: 'Aprovação, cancelamento, retorno' },
 ] as const;
 
