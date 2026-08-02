@@ -4,6 +4,41 @@ Todas de **julho de 2026**. Da DT-001 à DT-011, tomadas numa conversa de defini
 
 ---
 
+## DT-016 — Disponibilidade como padrão semanal mais exceções por data
+**Situação:** aceita
+
+### Contexto
+O modelo inicial tinha só um padrão semanal fixo: uma faixa por dia da semana. A dona informou que o salão é trabalho secundário no início e que os horários vão mudar com frequência enquanto ela se ajeita.
+
+Com só o padrão semanal, cada mudança exigiria reeditar os sete dias. Trabalho chato o bastante para ela deixar de fazer — e agenda desatualizada oferece horário que não existe, o que é pior que agenda nenhuma.
+
+Perguntada se havia algum padrão, respondeu que ainda não sabe.
+
+### Decisão
+Manter `business_hours` como padrão semanal e acrescentar `schedule_exceptions`, com uma linha por data.
+
+Uma exceção com horário **substitui** o padrão naquela data. Uma exceção **sem** horário fecha o dia.
+
+### Por que isto também resolve o "ainda não sei"
+
+Como a exceção tanto fecha quanto abre, o mesmo modelo atende os dois cenários sem alteração:
+
+- **Com padrão:** cadastra o padrão semanal e marca só o que foge dele
+- **Sem padrão:** deixa o padrão vazio e abre data por data
+
+A escolha passa a ser de uso, não de estrutura. Ela decide com a prática, e mudar de ideia não custa migração.
+
+### Alternativas consideradas
+- **Só datas específicas, sem padrão semanal** — máxima flexibilidade, mas obrigaria a abrir cada dia toda semana mesmo depois que a rotina estabilizasse
+- **Tabela separada para férias, com intervalo de datas** — evitaria uma linha por dia, mas criaria um segundo lugar onde procurar quando o app calcula disponibilidade. Um caminho só é mais fácil de manter correto que dois
+
+### Consequências
+- O cálculo de disponibilidade consulta padrão, exceções e agendamentos existentes
+- Férias viram várias linhas; a tela cria a partir de um intervalo, então ela não digita dia por dia
+- A chave primária `(professional_id, date)` garante uma exceção por data, sem ambiguidade
+
+---
+
 ## DT-015 — Configuração antes do agendamento
 **Situação:** aceita
 

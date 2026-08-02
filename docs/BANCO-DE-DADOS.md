@@ -64,6 +64,27 @@ Não há campo de dados de saúde. A anamnese fica em papel ([DT-010](DECISOES.m
 | `price_cents` | integer | **Cópia** do preço no momento da marcação |
 | `notes` | text | |
 
+### `schedule_exceptions`
+
+Ajustes de agenda para datas específicas, que substituem o padrão semanal ([DT-016](DECISOES.md)).
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `professional_id` | uuid | → `professionals.id` |
+| `date` | date | Junto com `professional_id`, é a chave primária |
+| `opens_at` | time | Nulo junto com `closes_at` significa **fechado o dia todo** |
+| `closes_at` | time | |
+| `note` | text | Motivo, de uso interno. **Não é legível pela chave pública** |
+
+A exceção tanto abre quanto fecha, e é isso que faz o modelo servir para quem tem rotina estável e para quem não tem nenhuma:
+
+| Situação | Como fica |
+|---|---|
+| Fechar uma quinta específica | Linha na data, sem horário |
+| Naquele sábado só de manhã | Linha na data, 09:00–12:00 |
+| Atender num domingo fora do padrão | Linha na data, com horário |
+| Férias | Uma linha por dia do período |
+
 ### `business_hours`
 
 Chave primária composta por `(professional_id, weekday)` — uma faixa por dia da semana.
@@ -79,8 +100,24 @@ Tabela de uma linha só. A chave primária é um boolean que só aceita `true`, 
 | `require_approval` | `true` | Dona aprova cada agendamento ([DT-008](DECISOES.md)) |
 | `allow_client_cancel` | `true` | Cliente cancela sozinha |
 | `maintenance_reminder_days` | `21` | Dias até a cliente entrar na lista de retorno |
+| `booking_window_days` | `14` | Até quantos dias à frente a agenda aceita marcação |
+| `minimum_notice_hours` | `3` | Antecedência mínima para marcar |
 
 > ⚠️ **A confirmar:** `maintenance_reminder_days` está em 21 por suposição. Qual é o prazo real de manutenção? Varia por serviço?
+
+> ⚠️ **A confirmar:** intervalo entre atendimentos, para limpeza e preparo. Entra no cálculo de disponibilidade e ainda não existe no schema.
+
+## Uma armadilha ao consultar `schedule_exceptions`
+
+A coluna `note` é restrita por permissão de coluna, não por RLS — RLS controla linha, e liberar a linha para a cliente entregaria o motivo junto ("consulta médica", "viagem").
+
+A consequência prática: **`select('*')` nessa tabela é recusado para a chave pública**, porque `*` inclui `note`. Consultas do lado da cliente precisam listar as colunas:
+
+```ts
+.select('professional_id, date, opens_at, closes_at')
+```
+
+O erro, se esquecer, é `permission denied for table schedule_exceptions` — que sugere falta de permissão e leva para o caminho errado. A tentação vira conceder acesso total, reabrindo o buraco.
 
 ## Duas escolhas que merecem explicação
 
