@@ -81,6 +81,9 @@ Só `src/lib/` conversa com o banco. Telas não chamam o Supabase direto — ela
 | `settings.ts` | A linha única de preferências |
 | `format.ts` | Preço, duração e horário — formatar e ler de volta |
 | `calendar.ts` | Datas e a grade do mês |
+| `pricing.ts` | Desconto e preço final |
+
+`pricing.ts` e `calendar.ts` não tocam no banco de propósito: são as duas contas que dão errado em silêncio — centavo de arredondamento e virada de mês — e ficar fora da camada de dados permite testá-las sem subir o app.
 
 ### Datas circulam como texto, nunca como `Date`
 

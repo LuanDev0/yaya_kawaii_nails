@@ -31,9 +31,13 @@ Onde a dona substitui os dados de exemplo pelos reais. Foi promovida da última 
 
 ### Serviços
 
-Cadastrar, editar, reordenar e desativar. Cada serviço tem nome, preço e duração.
+Cadastrar, editar, reordenar e desativar. Cada serviço tem nome, preço, duração e tempo de arrumação.
+
+As setas na lista mudam a ordem em que a cliente vê os serviços.
 
 Desativar em vez de apagar: serviço que já foi agendado não pode sumir, senão o histórico e o faturamento ficam com buracos.
+
+**Promoção.** Cada serviço aceita um desconto, em valor fixo ou em porcentagem. O preço cheio continua guardado, então encerrar a promoção é só limpar o desconto — e a cliente vê "de R$ 120 por R$ 96", que comunica melhor que só o valor final.
 
 Cada serviço também declara seu **tempo de arrumação** — os minutos de limpeza e preparo depois do atendimento. Depende do procedimento, não do salão ([DT-017](DECISOES.md)): a agenda bloqueia esse tempo, e a cliente não o vê.
 

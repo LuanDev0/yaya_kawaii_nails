@@ -12,7 +12,8 @@ import { ScreenHeader } from '@/components/screen-header';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDuration, formatPrice } from '@/lib/format';
-import { listAllServices, setServiceActive, type Service } from '@/lib/services';
+import { finalPriceCents, hasDiscount } from '@/lib/pricing';
+import { listAllServices, reorderServices, setServiceActive, type Service } from '@/lib/services';
 
 export default function ServicesScreen() {
   const { colors } = useTheme();
@@ -41,9 +42,8 @@ export default function ServicesScreen() {
     // Atualiza a tela primeiro para o switch responder na hora, e desfaz se o
     // banco recusar — esperar a ida e volta faz o controle parecer travado.
     setServices((current) =>
-      current?.map((item) =>
-        item.id === service.id ? { ...item, active: !item.active } : item,
-      ) ?? null,
+      current?.map((item) => (item.id === service.id ? { ...item, active: !item.active } : item)) ??
+        null,
     );
 
     try {
@@ -58,6 +58,26 @@ export default function ServicesScreen() {
     }
   }
 
+  async function move(index: number, direction: -1 | 1) {
+    if (!services) return;
+
+    const target = index + direction;
+    if (target < 0 || target >= services.length) return;
+
+    const reordered = [...services];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+
+    const previous = services;
+    setServices(reordered);
+
+    try {
+      await reorderServices(reordered.map((item) => item.id));
+    } catch (cause) {
+      setServices(previous);
+      setError((cause as Error).message);
+    }
+  }
+
   return (
     <ScrollView
       style={{ backgroundColor: colors.background }}
@@ -68,7 +88,7 @@ export default function ServicesScreen() {
       <View style={styles.inner}>
         <ScreenHeader
           title="Serviços"
-          subtitle="Toque num serviço para editar. A chave ativa e desativa — desativado sai do cardápio da cliente sem apagar o histórico."
+          subtitle="Toque num serviço para editar. As setas mudam a ordem em que a cliente vê a lista."
         />
 
         {error ? (
@@ -96,6 +116,21 @@ export default function ServicesScreen() {
                   styles.row,
                   index > 0 && { borderTopWidth: 1, borderTopColor: colors.border },
                 ]}>
+                <View style={styles.arrows}>
+                  <Arrow
+                    label={`Subir ${service.name}`}
+                    glyph="▲"
+                    disabled={index === 0}
+                    onPress={() => move(index, -1)}
+                  />
+                  <Arrow
+                    label={`Descer ${service.name}`}
+                    glyph="▼"
+                    disabled={index === services.length - 1}
+                    onPress={() => move(index, 1)}
+                  />
+                </View>
+
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Editar ${service.name}`}
@@ -112,11 +147,29 @@ export default function ServicesScreen() {
                       ›
                     </AppText>
                   </View>
-                  <AppText variant="support" color="textSecondary">
-                    {formatPrice(service.price_cents)} · {formatDuration(service.duration_minutes)}
-                    {service.buffer_minutes > 0 ? ` + ${service.buffer_minutes}min de arrumação` : ''}
-                    {service.active ? '' : ' · desativado'}
-                  </AppText>
+
+                  <View style={styles.priceLine}>
+                    {hasDiscount(service) ? (
+                      <>
+                        <AppText variant="support" color="textSecondary" style={styles.struck}>
+                          {formatPrice(service.price_cents)}
+                        </AppText>
+                        <AppText variant="label" color="textAccent">
+                          {formatPrice(finalPriceCents(service))}
+                        </AppText>
+                      </>
+                    ) : (
+                      <AppText variant="support" color="textSecondary">
+                        {formatPrice(service.price_cents)}
+                      </AppText>
+                    )}
+
+                    <AppText variant="support" color="textSecondary">
+                      · {formatDuration(service.duration_minutes)}
+                      {service.buffer_minutes > 0 ? ` + ${service.buffer_minutes}min` : ''}
+                      {service.active ? '' : ' · desativado'}
+                    </AppText>
+                  </View>
                 </Pressable>
 
                 <Switch
@@ -139,6 +192,31 @@ export default function ServicesScreen() {
   );
 }
 
+function Arrow({
+  label,
+  glyph,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  glyph: string;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.arrow, { opacity: disabled ? 0.2 : pressed ? 0.5 : 1 }]}>
+      <AppText variant="label" color="textAccent">
+        {glyph}
+      </AppText>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.three },
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
@@ -146,12 +224,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: Spacing.three,
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
+  arrows: { alignItems: 'center' },
+  arrow: { paddingHorizontal: Spacing.one, paddingVertical: Spacing.half },
   rowText: { flex: 1 },
   rowTitle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowName: { flex: 1, paddingRight: Spacing.two },
+  priceLine: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.one },
+  struck: { textDecorationLine: 'line-through' },
   footer: { marginTop: Spacing.four },
 });

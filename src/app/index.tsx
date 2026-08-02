@@ -15,6 +15,7 @@ import { Card } from '@/components/card';
 import { MaxContentWidth, Radius, Spacing, type ThemeColor } from '@/constants/theme';
 import { useTheme, type ThemeMode } from '@/hooks/use-theme';
 import { formatDuration, formatPrice } from '@/lib/format';
+import { finalPriceCents, hasDiscount } from '@/lib/pricing';
 import { listActiveServices, type Service } from '@/lib/services';
 
 const MODES: { value: ThemeMode; label: string }[] = [
@@ -157,9 +158,16 @@ function ServiceList() {
               {formatDuration(service.duration_minutes)}
             </AppText>
           </View>
-          <AppText variant="bodyBold" color="textAccent">
-            {formatPrice(service.price_cents)}
-          </AppText>
+          <View style={styles.priceColumn}>
+            {hasDiscount(service) ? (
+              <AppText variant="support" color="textSecondary" style={styles.struck}>
+                {formatPrice(service.price_cents)}
+              </AppText>
+            ) : null}
+            <AppText variant="bodyBold" color="textAccent">
+              {formatPrice(finalPriceCents(service))}
+            </AppText>
+          </View>
         </View>
       ))}
     </Card>
@@ -266,4 +274,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: Spacing.two,
   },
+  priceColumn: { alignItems: 'flex-end' },
+  struck: { textDecorationLine: 'line-through' },
 });

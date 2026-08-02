@@ -2,7 +2,7 @@
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -10,9 +10,10 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { ScreenHeader } from '@/components/screen-header';
 import { TextField } from '@/components/text-field';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { addMinutes, formatDuration, formatPrice, parsePrice } from '@/lib/format';
+import { finalPriceCents } from '@/lib/pricing';
 import { createService, getService, listAllServices, updateService } from '@/lib/services';
 
 export default function ServiceFormScreen() {
@@ -27,6 +28,8 @@ export default function ServiceFormScreen() {
   const [price, setPrice] = useState('');
   const [duration, setDuration] = useState('');
   const [buffer, setBuffer] = useState('0');
+  const [discountKind, setDiscountKind] = useState<'nenhum' | 'valor' | 'percentual'>('nenhum');
+  const [discountValue, setDiscountValue] = useState('');
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -44,6 +47,14 @@ export default function ServiceFormScreen() {
         setPrice((service.price_cents / 100).toFixed(2).replace('.', ','));
         setDuration(String(service.duration_minutes));
         setBuffer(String(service.buffer_minutes));
+        setDiscountKind(service.discount_kind ?? 'nenhum');
+        setDiscountValue(
+          service.discount_kind === 'valor'
+            ? ((service.discount_value ?? 0) / 100).toFixed(2).replace('.', ',')
+            : service.discount_value
+              ? String(service.discount_value)
+              : '',
+        );
       })
       .catch((cause: Error) => active && setErrors({ form: cause.message }))
       .finally(() => active && setLoading(false));
@@ -59,6 +70,31 @@ export default function ServiceFormScreen() {
   const bufferMinutes = Number(buffer || '0');
   const bufferValid = Number.isInteger(bufferMinutes) && bufferMinutes >= 0;
 
+  // Em centavos quando é valor; de 1 a 100 quando é porcentagem.
+  const discountParsed =
+    discountKind === 'nenhum'
+      ? null
+      : discountKind === 'valor'
+        ? parsePrice(discountValue)
+        : Number.isInteger(Number(discountValue)) && Number(discountValue) > 0
+          ? Number(discountValue)
+          : null;
+
+  const discountOk =
+    discountKind === 'nenhum' ||
+    (discountParsed !== null &&
+      discountParsed > 0 &&
+      (discountKind === 'valor' || discountParsed <= 100));
+
+  const preview =
+    priceCents !== null && discountOk
+      ? finalPriceCents({
+          price_cents: priceCents,
+          discount_kind: discountKind === 'nenhum' ? null : discountKind,
+          discount_value: discountParsed,
+        })
+      : null;
+
   async function handleSave() {
     const found: Record<string, string> = {};
 
@@ -66,6 +102,12 @@ export default function ServiceFormScreen() {
     if (priceCents === null) found.price = 'Preço inválido. Escreva algo como 120,00.';
     if (!durationValid) found.duration = 'Duração em minutos, um número maior que zero.';
     if (!bufferValid) found.buffer = 'Minutos de arrumação, zero ou mais.';
+    if (!discountOk) {
+      found.discount =
+        discountKind === 'valor'
+          ? 'Valor do desconto inválido. Escreva algo como 20,00.'
+          : 'Porcentagem de 1 a 100.';
+    }
 
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -81,6 +123,8 @@ export default function ServiceFormScreen() {
         await createService({
           name: name.trim(),
           price_cents: priceCents!,
+          discount_kind: discountKind === 'nenhum' ? null : discountKind,
+          discount_value: discountKind === 'nenhum' ? null : discountParsed,
           duration_minutes: durationMinutes,
           buffer_minutes: bufferMinutes,
           active: true,
@@ -90,6 +134,8 @@ export default function ServiceFormScreen() {
         await updateService(id, {
           name: name.trim(),
           price_cents: priceCents!,
+          discount_kind: discountKind === 'nenhum' ? null : discountKind,
+          discount_value: discountKind === 'nenhum' ? null : discountParsed,
           duration_minutes: durationMinutes,
           buffer_minutes: bufferMinutes,
         });
@@ -154,6 +200,68 @@ export default function ServiceFormScreen() {
           </AppText>
         ) : null}
 
+        <AppText variant="label" color="textSecondary" style={styles.groupLabel}>
+          PROMOÇÃO
+        </AppText>
+
+        <View style={styles.options}>
+          {(
+            [
+              { value: 'nenhum', label: 'Sem promoção' },
+              { value: 'valor', label: 'Abater um valor' },
+              { value: 'percentual', label: 'Abater uma %' },
+            ] as const
+          ).map((option) => {
+            const active = discountKind === option.value;
+
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                onPress={() => setDiscountKind(option.value)}
+                disabled={saving}
+                style={[
+                  styles.option,
+                  {
+                    backgroundColor: active ? colors.primary : 'transparent',
+                    borderColor: active ? colors.primary : colors.border,
+                  },
+                ]}>
+                <AppText variant="label" color={active ? 'onPrimary' : 'textSecondary'}>
+                  {option.label}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {discountKind !== 'nenhum' ? (
+          <TextField
+            label={discountKind === 'valor' ? 'Quanto abater' : 'Quantos por cento'}
+            value={discountValue}
+            onChangeText={setDiscountValue}
+            placeholder={discountKind === 'valor' ? '20,00' : '15'}
+            keyboardType={discountKind === 'valor' ? 'decimal-pad' : 'number-pad'}
+            inputMode={discountKind === 'valor' ? 'decimal' : 'numeric'}
+            editable={!saving}
+            error={errors.discount}
+          />
+        ) : null}
+
+        {preview !== null && priceCents !== null && preview !== priceCents ? (
+          <Card style={styles.example}>
+            <AppText variant="support" color="textSecondary">
+              A cliente vê{' '}
+              <AppText variant="support" style={styles.struck}>
+                {formatPrice(priceCents)}
+              </AppText>{' '}
+              por <AppText variant="label">{formatPrice(preview)}</AppText>. O preço cheio continua
+              guardado — encerrando a promoção, ele volta sozinho.
+            </AppText>
+          </Card>
+        ) : null}
+
         <TextField
           label="Duração em minutos"
           value={duration}
@@ -214,5 +322,14 @@ const styles = StyleSheet.create({
   errorCard: { marginBottom: Spacing.three },
   hint: { marginTop: -Spacing.two, marginBottom: Spacing.three },
   example: { marginBottom: Spacing.three },
+  groupLabel: { marginBottom: Spacing.two, letterSpacing: 1 },
+  options: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginBottom: Spacing.three },
+  option: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  struck: { textDecorationLine: 'line-through' },
   footer: { marginTop: Spacing.three },
 });

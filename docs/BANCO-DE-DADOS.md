@@ -32,7 +32,9 @@ Profissionais que atendem. Uma linha por enquanto ([DT-007](DECISOES.md)).
 |---|---|---|
 | `id` | uuid | |
 | `name` | text | |
-| `price_cents` | integer | **Centavos**, não decimal — ver abaixo |
+| `price_cents` | integer | Preço cheio, em **centavos** — ver abaixo |
+| `discount_kind` | text | `valor` ou `percentual`. Nulo = sem promoção |
+| `discount_value` | integer | Centavos se `valor`; de 1 a 100 se `percentual` |
 | `duration_minutes` | integer | Duração do atendimento. É o que a cliente vê |
 | `buffer_minutes` | integer | Arrumação depois. Bloqueia a agenda sem aparecer para a cliente ([DT-017](DECISOES.md)) |
 | `active` | boolean | |
@@ -63,7 +65,8 @@ Não há campo de dados de saúde. A anamnese fica em papel ([DT-010](DECISOES.m
 | `ends_at` | timestamptz | Fim do **atendimento**. É o que a cliente vê |
 | `blocked_until` | timestamptz | Fim da **arrumação**. É o que a agenda bloqueia |
 | `status` | text | `pendente`, `confirmado`, `cancelado`, `concluido` |
-| `price_cents` | integer | **Cópia** do preço no momento da marcação |
+| `price_cents` | integer | **Cópia** do valor cobrado no momento da marcação |
+| `discount_cents` | integer | Quanto de promoção foi dado. Zero quando não houve |
 | `notes` | text | |
 
 ### `schedule_exceptions`
@@ -126,6 +129,16 @@ O erro, se esquecer, é `permission denied for table schedule_exceptions` — qu
 ### Dinheiro em centavos, não em decimal
 
 `price_cents` é `integer`. Guardar dinheiro como número de ponto flutuante acumula erro de arredondamento, e isso aparece no relatório de faturamento como centavos que não fecham. Um preço de R$ 120,00 é `12000`.
+
+### A promoção não sobrescreve o preço
+
+`discount_kind` e `discount_value` ficam em colunas próprias em vez de baixar `price_cents`.
+
+Assim o valor cheio não se perde: encerrada a promoção, basta limpar o desconto e o preço volta sozinho, sem ninguém precisar lembrar qual era. E a cliente pode ver "de R$ 120 por R$ 96" — que vende bem mais que só "R$ 96".
+
+O cálculo fica em `src/lib/pricing.ts`, separado do acesso ao banco para poder ser testado sozinho.
+
+`appointments.discount_cents` registra quanto foi abatido naquele atendimento. Sem isso, o faturamento mostraria o valor cobrado sem que houvesse como saber quanto foi de promoção no período.
 
 ### O preço é copiado para o agendamento
 
