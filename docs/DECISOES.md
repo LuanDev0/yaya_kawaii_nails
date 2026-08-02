@@ -4,6 +4,38 @@ Todas de **julho de 2026**. Da DT-001 à DT-011, tomadas numa conversa de defini
 
 ---
 
+## DT-017 — Intervalo de arrumação por serviço, e não do salão
+**Situação:** aceita
+
+### Contexto
+O plano era guardar um intervalo único entre atendimentos, na configuração do salão. Perguntada quantos minutos, a dona respondeu que depende: alguns procedimentos pedem 5 minutos de arrumação, outros 25.
+
+### Decisão
+`buffer_minutes` é coluna de `services`, não de `settings`.
+
+O tempo de arrumação é propriedade do procedimento, não do salão — blindagem sempre vai dar menos trabalho que alongamento, em qualquer dia. Um número único do salão seria uma média que não descreve nenhum dos dois casos: apertada para o serviço pesado, desperdiçando agenda no serviço leve.
+
+### O agendamento guarda dois marcos
+
+| Campo | Significa | Quem vê |
+|---|---|---|
+| `ends_at` | Fim do atendimento | A cliente |
+| `blocked_until` | Fim da arrumação | Só a agenda |
+
+Somar o intervalo à duração e guardar um número só faria a cliente ler "das 14h às 16h55" quando 25 daqueles minutos são a mesa sendo limpa. A separação mantém honesto o que se mostra a ela e correto o que a agenda bloqueia.
+
+A trava de sobreposição passou a usar `blocked_until`, então o banco continua sendo quem garante que ninguém marca em cima — agora incluindo a arrumação.
+
+### Alternativas consideradas
+- **Somar o intervalo ao `ends_at`** — uma coluna a menos, mas a cliente veria um horário de término que não é o dela
+- **Intervalo único na configuração** — mais simples, mas obrigaria escolher entre agenda apertada ou desperdiçada
+
+### Consequências
+- Cada serviço declara seu próprio tempo de arrumação, com padrão zero
+- `blocked_until` é calculado pelo app ao marcar, e não pelo banco: `timestamptz + interval` não é imutável no Postgres e por isso não pode entrar na expressão de uma constraint
+
+---
+
 ## DT-016 — Disponibilidade como padrão semanal mais exceções por data
 **Situação:** aceita
 

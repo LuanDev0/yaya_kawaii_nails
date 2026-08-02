@@ -12,7 +12,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatDuration, formatPrice, parsePrice } from '@/lib/format';
+import { addMinutes, formatDuration, formatPrice, parsePrice } from '@/lib/format';
 import { createService, getService, listAllServices, updateService } from '@/lib/services';
 
 export default function ServiceFormScreen() {
@@ -26,6 +26,7 @@ export default function ServiceFormScreen() {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [duration, setDuration] = useState('');
+  const [buffer, setBuffer] = useState('0');
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -42,6 +43,7 @@ export default function ServiceFormScreen() {
         setName(service.name);
         setPrice((service.price_cents / 100).toFixed(2).replace('.', ','));
         setDuration(String(service.duration_minutes));
+        setBuffer(String(service.buffer_minutes));
       })
       .catch((cause: Error) => active && setErrors({ form: cause.message }))
       .finally(() => active && setLoading(false));
@@ -54,6 +56,8 @@ export default function ServiceFormScreen() {
   const priceCents = parsePrice(price);
   const durationMinutes = Number(duration);
   const durationValid = Number.isInteger(durationMinutes) && durationMinutes > 0;
+  const bufferMinutes = Number(buffer || '0');
+  const bufferValid = Number.isInteger(bufferMinutes) && bufferMinutes >= 0;
 
   async function handleSave() {
     const found: Record<string, string> = {};
@@ -61,6 +65,7 @@ export default function ServiceFormScreen() {
     if (!name.trim()) found.name = 'Dê um nome ao serviço.';
     if (priceCents === null) found.price = 'Preço inválido. Escreva algo como 120,00.';
     if (!durationValid) found.duration = 'Duração em minutos, um número maior que zero.';
+    if (!bufferValid) found.buffer = 'Minutos de arrumação, zero ou mais.';
 
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -77,6 +82,7 @@ export default function ServiceFormScreen() {
           name: name.trim(),
           price_cents: priceCents!,
           duration_minutes: durationMinutes,
+          buffer_minutes: bufferMinutes,
           active: true,
           sort_order: nextOrder,
         });
@@ -85,6 +91,7 @@ export default function ServiceFormScreen() {
           name: name.trim(),
           price_cents: priceCents!,
           duration_minutes: durationMinutes,
+          buffer_minutes: bufferMinutes,
         });
       }
 
@@ -163,6 +170,35 @@ export default function ServiceFormScreen() {
           </AppText>
         ) : null}
 
+        <TextField
+          label="Arrumação depois, em minutos"
+          value={buffer}
+          onChangeText={setBuffer}
+          placeholder="0"
+          keyboardType="number-pad"
+          inputMode="numeric"
+          editable={!saving}
+          error={errors.buffer}
+        />
+        <AppText variant="support" color="textSecondary" style={styles.hint}>
+          Tempo de limpar e preparar para a próxima cliente. A agenda bloqueia, mas a cliente não
+          vê — para ela o horário termina junto com o atendimento.
+        </AppText>
+
+        {durationValid && bufferValid && bufferMinutes > 0 ? (
+          <Card style={styles.example}>
+            <AppText variant="support" color="textSecondary">
+              Marcando às 14:00, a cliente vê o término às{' '}
+              <AppText variant="label">{addMinutes('14:00', durationMinutes)}</AppText> e o próximo
+              horário livre é{' '}
+              <AppText variant="label">
+                {addMinutes('14:00', durationMinutes + bufferMinutes)}
+              </AppText>
+              .
+            </AppText>
+          </Card>
+        ) : null}
+
         <View style={styles.footer}>
           <Button label={saving ? 'Salvando...' : 'Salvar'} onPress={handleSave} disabled={saving} />
         </View>
@@ -177,5 +213,6 @@ const styles = StyleSheet.create({
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   errorCard: { marginBottom: Spacing.three },
   hint: { marginTop: -Spacing.two, marginBottom: Spacing.three },
+  example: { marginBottom: Spacing.three },
   footer: { marginTop: Spacing.three },
 });

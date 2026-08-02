@@ -33,7 +33,8 @@ Profissionais que atendem. Uma linha por enquanto ([DT-007](DECISOES.md)).
 | `id` | uuid | |
 | `name` | text | |
 | `price_cents` | integer | **Centavos**, não decimal — ver abaixo |
-| `duration_minutes` | integer | Define quais horários cabem na agenda |
+| `duration_minutes` | integer | Duração do atendimento. É o que a cliente vê |
+| `buffer_minutes` | integer | Arrumação depois. Bloqueia a agenda sem aparecer para a cliente ([DT-017](DECISOES.md)) |
 | `active` | boolean | |
 | `sort_order` | integer | Ordem de exibição para a cliente |
 
@@ -59,7 +60,8 @@ Não há campo de dados de saúde. A anamnese fica em papel ([DT-010](DECISOES.m
 | `service_id` | uuid | → `services.id` |
 | `professional_id` | uuid | → `professionals.id` |
 | `starts_at` | timestamptz | |
-| `ends_at` | timestamptz | Calculado a partir da duração do serviço |
+| `ends_at` | timestamptz | Fim do **atendimento**. É o que a cliente vê |
+| `blocked_until` | timestamptz | Fim da **arrumação**. É o que a agenda bloqueia |
 | `status` | text | `pendente`, `confirmado`, `cancelado`, `concluido` |
 | `price_cents` | integer | **Cópia** do preço no momento da marcação |
 | `notes` | text | |
@@ -139,9 +141,13 @@ O ponto que justificou escolher Postgres em vez de Firestore ([DT-002](DECISOES.
 alter table appointments add constraint sem_sobreposicao
   exclude using gist (
     professional_id with =,
-    tstzrange(starts_at, ends_at) with &&
+    tstzrange(starts_at, blocked_until) with &&
   ) where (status in ('pendente', 'confirmado'));
 ```
+
+Repare que a faixa vai até `blocked_until`, e não até `ends_at`: o tempo de arrumação também é horário ocupado. Um alongamento de 2h30 com 25 minutos de arrumação marcado às 14h termina para a cliente às 16h30 e libera a agenda às 16h55.
+
+`blocked_until` é calculado pelo app ao marcar, e não por coluna gerada, porque `timestamptz + interval` não é imutável no Postgres — e só expressão imutável entra em constraint ou índice.
 
 Duas clientes agendando o mesmo horário no mesmo instante: o banco recusa a segunda. Isso **não** depende de o app ter checado antes — e é exatamente na disputa simultânea que a checagem no app falha, porque as duas leem "livre" antes de qualquer uma escrever.
 

@@ -6,7 +6,11 @@ export type Service = {
   id: string;
   name: string;
   price_cents: number;
+  /** Duração do atendimento. É o que a cliente vê. */
   duration_minutes: number;
+  /** Arrumação depois do atendimento. Bloqueia a agenda sem aparecer para a
+   *  cliente — depende do procedimento, não do salão (DT-017). */
+  buffer_minutes: number;
   active: boolean;
   sort_order: number;
 };
@@ -15,6 +19,7 @@ export type ServiceInput = {
   name: string;
   price_cents: number;
   duration_minutes: number;
+  buffer_minutes: number;
   active: boolean;
   sort_order: number;
 };
@@ -27,7 +32,7 @@ export type ServiceInput = {
 export async function listAllServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from('services')
-    .select('id, name, price_cents, duration_minutes, active, sort_order')
+    .select('id, name, price_cents, duration_minutes, buffer_minutes, active, sort_order')
     .order('sort_order');
 
   if (error) throw new Error(error.message);
@@ -39,7 +44,7 @@ export async function listAllServices(): Promise<Service[]> {
 export async function listActiveServices(): Promise<Service[]> {
   const { data, error } = await supabase
     .from('services')
-    .select('id, name, price_cents, duration_minutes, active, sort_order')
+    .select('id, name, price_cents, duration_minutes, buffer_minutes, active, sort_order')
     .eq('active', true)
     .order('sort_order');
 
@@ -50,7 +55,7 @@ export async function listActiveServices(): Promise<Service[]> {
 export async function getService(id: string): Promise<Service | null> {
   const { data, error } = await supabase
     .from('services')
-    .select('id, name, price_cents, duration_minutes, active, sort_order')
+    .select('id, name, price_cents, duration_minutes, buffer_minutes, active, sort_order')
     .eq('id', id)
     .maybeSingle();
 

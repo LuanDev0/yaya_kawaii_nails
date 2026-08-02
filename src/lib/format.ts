@@ -50,6 +50,14 @@ export function formatTime(value: string): string {
   return value.slice(0, 5);
 }
 
+/** "14:00" mais 150 minutos vira "16:30". Passa da meia-noite dando a volta. */
+export function addMinutes(time: string, minutes: number): string {
+  const [hours, mins] = time.split(':').map(Number);
+  const total = (hours * 60 + mins + minutes) % (24 * 60);
+
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
 /**
  * Valida e normaliza um horário digitado. Aceita "9:00" e devolve "09:00".
  * Devolve null se não for um horário válido.

@@ -105,6 +105,7 @@ export default function ServicesScreen() {
                   </AppText>
                   <AppText variant="support" color="textSecondary">
                     {formatPrice(service.price_cents)} · {formatDuration(service.duration_minutes)}
+                    {service.buffer_minutes > 0 ? ` + ${service.buffer_minutes}min de arrumação` : ''}
                     {service.active ? '' : ' · desativado'}
                   </AppText>
                 </Pressable>
