@@ -1,7 +1,7 @@
 /** Dias e faixas de atendimento. Dia desligado é dia sem atendimento. */
 
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { ScreenHeader } from '@/components/screen-header';
 import { TextField } from '@/components/text-field';
+import { Toggle } from '@/components/toggle';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
@@ -148,12 +149,10 @@ export default function BusinessHoursScreen() {
                   <AppText variant="bodyBold" color={day.open ? 'textPrimary' : 'textSecondary'}>
                     {WEEKDAYS[weekday]}
                   </AppText>
-                  <Switch
+                  <Toggle
                     value={day.open}
                     onValueChange={(open) => updateDay(weekday, { open })}
                     accessibilityLabel={`Atender ${WEEKDAYS[weekday]}`}
-                    trackColor={{ true: colors.primary, false: colors.border }}
-                    thumbColor={colors.surface}
                   />
                 </View>
 

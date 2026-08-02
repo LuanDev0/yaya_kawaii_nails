@@ -26,6 +26,7 @@ export default function ServiceFormScreen() {
   const isNew = id === 'novo';
 
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [duration, setDuration] = useState('');
   const [buffer, setBuffer] = useState('0');
@@ -47,6 +48,7 @@ export default function ServiceFormScreen() {
         if (!active || !service) return;
 
         setName(service.name);
+        setDescription(service.description ?? '');
         setPrice((service.price_cents / 100).toFixed(2).replace('.', ','));
         setDuration(String(service.duration_minutes));
         setBuffer(String(service.buffer_minutes));
@@ -142,6 +144,7 @@ export default function ServiceFormScreen() {
 
         await createService({
           name: name.trim(),
+          description: description.trim() || null,
           price_cents: priceCents!,
           discount_kind: discountKind === 'nenhum' ? null : discountKind,
           discount_value: discountKind === 'nenhum' ? null : discountParsed,
@@ -155,6 +158,7 @@ export default function ServiceFormScreen() {
       } else {
         await updateService(id, {
           name: name.trim(),
+          description: description.trim() || null,
           price_cents: priceCents!,
           discount_kind: discountKind === 'nenhum' ? null : discountKind,
           discount_value: discountKind === 'nenhum' ? null : discountParsed,
@@ -207,6 +211,20 @@ export default function ServiceFormScreen() {
           editable={!saving}
           error={errors.name}
         />
+
+        <TextField
+          label="Descrição"
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Aplicação em gel, cutícula, esmaltação e finalização com óleo"
+          multiline
+          numberOfLines={3}
+          style={styles.multiline}
+          editable={!saving}
+        />
+        <AppText variant="support" color="textSecondary" style={styles.hint}>
+          O que está incluso. A cliente lê isto ao escolher o serviço.
+        </AppText>
 
         <TextField
           label="Preço"
@@ -397,6 +415,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   struck: { textDecorationLine: 'line-through' },
+  multiline: { minHeight: 88, textAlignVertical: 'top', paddingTop: Spacing.three },
   times: { flexDirection: 'row', gap: Spacing.three },
   timeField: { flex: 1 },
   footer: { marginTop: Spacing.three },

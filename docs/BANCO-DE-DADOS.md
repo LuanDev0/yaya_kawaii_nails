@@ -32,6 +32,7 @@ Profissionais que atendem. Uma linha por enquanto ([DT-007](DECISOES.md)).
 |---|---|---|
 | `id` | uuid | |
 | `name` | text | |
+| `description` | text | O que está incluso. Escrito para a cliente ler |
 | `price_cents` | integer | Preço cheio, em **centavos** — ver abaixo |
 | `discount_kind` | text | `valor` ou `percentual`. Nulo = sem promoção |
 | `discount_value` | integer | Centavos se `valor`; de 1 a 100 se `percentual` |

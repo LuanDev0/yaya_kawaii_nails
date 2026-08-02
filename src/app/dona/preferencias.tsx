@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -14,6 +14,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { ScreenHeader } from '@/components/screen-header';
 import { TextField } from '@/components/text-field';
+import { Toggle } from '@/components/toggle';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getSettings, updateSettings, type Settings } from '@/lib/settings';
@@ -114,14 +115,12 @@ export default function PreferencesScreen() {
                     confirmado.
                   </AppText>
                 </View>
-                <Switch
+                <Toggle
                   value={settings.require_approval}
                   onValueChange={(require_approval) =>
                     setSettings({ ...settings, require_approval })
                   }
                   accessibilityLabel="Aprovar cada agendamento"
-                  trackColor={{ true: colors.primary, false: colors.border }}
-                  thumbColor={colors.surface}
                 />
               </View>
 
@@ -132,14 +131,12 @@ export default function PreferencesScreen() {
                     Desligado, ela precisa falar com você para desmarcar.
                   </AppText>
                 </View>
-                <Switch
+                <Toggle
                   value={settings.allow_client_cancel}
                   onValueChange={(allow_client_cancel) =>
                     setSettings({ ...settings, allow_client_cancel })
                   }
                   accessibilityLabel="Cliente pode cancelar sozinha"
-                  trackColor={{ true: colors.primary, false: colors.border }}
-                  thumbColor={colors.surface}
                 />
               </View>
             </Card>

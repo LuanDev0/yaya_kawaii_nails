@@ -31,7 +31,9 @@ Onde a dona substitui os dados de exemplo pelos reais. Foi promovida da última 
 
 ### Serviços
 
-Cadastrar, editar, reordenar e desativar. Cada serviço tem nome, preço, duração e tempo de arrumação.
+Cadastrar, editar, reordenar e desativar. Cada serviço tem nome, descrição, preço, duração e tempo de arrumação.
+
+A **descrição** conta o que está incluso, e é a cliente quem lê — é onde "alongamento em gel" vira "aplicação em gel, cutícula, esmaltação e finalização com óleo".
 
 As setas na lista mudam a ordem em que a cliente vê os serviços.
 

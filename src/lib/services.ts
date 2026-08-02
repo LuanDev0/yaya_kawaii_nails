@@ -4,11 +4,13 @@ import { type DiscountKind } from '@/lib/pricing';
 import { supabase } from '@/lib/supabase';
 
 const SERVICE_COLUMNS =
-  'id, name, price_cents, discount_kind, discount_value, discount_starts_on, discount_ends_on, duration_minutes, buffer_minutes, active, sort_order';
+  'id, name, description, price_cents, discount_kind, discount_value, discount_starts_on, discount_ends_on, duration_minutes, buffer_minutes, active, sort_order';
 
 export type Service = {
   id: string;
   name: string;
+  /** O que está incluso, escrito para a cliente ler. */
+  description: string | null;
   /** Preço cheio. A promoção fica em `discount_*` e não sobrescreve este valor. */
   price_cents: number;
   discount_kind: DiscountKind;
@@ -29,6 +31,7 @@ export type Service = {
 
 export type ServiceInput = {
   name: string;
+  description: string | null;
   price_cents: number;
   discount_kind: DiscountKind;
   discount_value: number | null;

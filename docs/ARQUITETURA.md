@@ -61,6 +61,10 @@ Telas nunca declaram `fontFamily`. Use `<AppText variant="…">`, que já aplica
 | `AppText` | Todo texto. Variantes: `title`, `heading`, `subheading`, `body`, `bodyBold`, `support`, `label` |
 | `Button` | Variantes `primary` (laranja) e `secondary` (contorno) |
 | `Card` | Superfície com borda e canto arredondado |
+| `TextField` | Campo de texto com rótulo e erro |
+| `Toggle` | Liga/desliga na paleta da marca |
+
+`Toggle` existe porque o `Switch` do React Native ignora as cores informadas em algumas plataformas e insiste no verde do sistema, destoando de um app em laranja e lavanda. Ele também define `aria-checked` explicitamente: o React Native Web não traduz `accessibilityState.checked` para o atributo do navegador, e sem isso um leitor de tela anuncia o controle sem dizer se está ligado.
 
 ## Convenções
 

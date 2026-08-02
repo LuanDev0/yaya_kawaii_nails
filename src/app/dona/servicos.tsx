@@ -2,13 +2,14 @@
 
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { ScreenHeader } from '@/components/screen-header';
+import { Toggle } from '@/components/toggle';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDuration, formatPrice } from '@/lib/format';
@@ -187,12 +188,10 @@ export default function ServicesScreen() {
                   ) : null}
                 </Pressable>
 
-                <Switch
+                <Toggle
                   value={service.active}
                   onValueChange={() => toggle(service)}
                   accessibilityLabel={`Ativar ${service.name}`}
-                  trackColor={{ true: colors.primary, false: colors.border }}
-                  thumbColor={colors.surface}
                 />
               </View>
             ))}

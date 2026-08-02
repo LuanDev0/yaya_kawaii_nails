@@ -156,6 +156,11 @@ function ServiceList() {
           ]}>
           <View style={styles.serviceInfo}>
             <AppText variant="bodyBold">{service.name}</AppText>
+            {service.description ? (
+              <AppText variant="support" color="textSecondary">
+                {service.description}
+              </AppText>
+            ) : null}
             <AppText variant="support" color="textSecondary">
               {formatDuration(service.duration_minutes)}
             </AppText>
