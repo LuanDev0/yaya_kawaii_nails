@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -15,12 +15,18 @@ import { Card } from '@/components/card';
 import { ScreenHeader } from '@/components/screen-header';
 import { TextField } from '@/components/text-field';
 import { Toggle } from '@/components/toggle';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useTheme, type ThemeMode } from '@/hooks/use-theme';
 import { getSettings, updateSettings, type Settings } from '@/lib/settings';
 
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'system', label: 'Do sistema' },
+  { value: 'light', label: 'Claro' },
+  { value: 'dark', label: 'Escuro' },
+];
+
 export default function PreferencesScreen() {
-  const { colors } = useTheme();
+  const { colors, mode, setMode } = useTheme();
   const insets = useSafeAreaInsets();
 
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -200,6 +206,43 @@ export default function PreferencesScreen() {
             </View>
           </>
         )}
+
+        <AppText variant="label" color="textSecondary" style={styles.sectionLabel}>
+          APARÊNCIA
+        </AppText>
+
+        <Card>
+          <AppText variant="bodyBold">Tema do app</AppText>
+          <AppText variant="support" color="textSecondary" style={styles.themeHint}>
+            Vale só neste aparelho, e é guardado — na próxima vez que abrir, continua como você
+            deixou.
+          </AppText>
+
+          <View style={styles.themeOptions}>
+            {THEME_OPTIONS.map((option) => {
+              const active = mode === option.value;
+
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => setMode(option.value)}
+                  style={[
+                    styles.themeOption,
+                    {
+                      backgroundColor: active ? colors.primary : 'transparent',
+                      borderColor: active ? colors.primary : colors.border,
+                    },
+                  ]}>
+                  <AppText variant="label" color={active ? 'onPrimary' : 'textSecondary'}>
+                    {option.label}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
       </View>
     </ScrollView>
   );
@@ -218,6 +261,15 @@ const styles = StyleSheet.create({
   },
   optionText: { flex: 1 },
   field: { marginTop: Spacing.four },
+  sectionLabel: { marginTop: Spacing.five, marginBottom: Spacing.two, letterSpacing: 1 },
+  themeHint: { marginTop: Spacing.one },
+  themeOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.three },
+  themeOption: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
   hint: { marginTop: -Spacing.two },
   footer: { marginTop: Spacing.three },
 });

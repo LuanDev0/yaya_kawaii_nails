@@ -6,7 +6,16 @@
  * dois modos sem mexer nas configurações do celular.
  */
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { Colors, type ColorScheme, type ThemeColors } from '@/constants/theme';
 // Não importe useColorScheme direto do react-native: no web o app é renderizado
@@ -26,9 +35,40 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+/** Fica no aparelho, não no banco: é preferência de quem está olhando a tela,
+ *  e cada aparelho pode querer a sua. */
+const STORAGE_KEY = 'yaya:tema';
+
+function isThemeMode(value: unknown): value is ThemeMode {
+  return value === 'system' || value === 'light' || value === 'dark';
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useSystemColorScheme();
-  const [mode, setMode] = useState<ThemeMode>('system');
+  const [mode, setModeState] = useState<ThemeMode>('system');
+
+  useEffect(() => {
+    let active = true;
+
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((saved) => {
+        if (active && isThemeMode(saved)) setModeState(saved);
+      })
+      // Falha ao ler não é motivo para travar o app: segue no padrão do sistema.
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setMode = useCallback((next: ThemeMode) => {
+    // Aplica na hora e grava depois: esperar a escrita faria o toque parecer
+    // travado, e o pior caso de a gravação falhar é a escolha não sobreviver
+    // ao fechamento do app.
+    setModeState(next);
+    AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
+  }, []);
 
   const value = useMemo<ThemeContextValue>(() => {
     const scheme: ColorScheme =

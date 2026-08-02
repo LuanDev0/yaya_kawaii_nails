@@ -75,6 +75,8 @@ Cada exceção aceita um motivo, visível só para a dona. A cliente enxerga que
 | Agenda aberta por | 14 dias | Até quando à frente a cliente consegue marcar |
 | Antecedência mínima | 3 horas | Quanto tempo antes, no mínimo, ela pode marcar |
 
+Há ainda o **tema do app** — do sistema, claro ou escuro. Diferente das demais, essa escolha fica no aparelho e não no banco: é preferência de quem está olhando a tela, e cada aparelho pode querer a sua. Ela é lembrada entre aberturas.
+
 As duas primeiras são chaves justamente para poderem mudar sem mexer no código ([DT-008](DECISOES.md)).
 
 ---

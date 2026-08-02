@@ -40,7 +40,9 @@ graph TD
 const { colors, scheme, mode, setMode } = useTheme();
 ```
 
-Por padrão segue o sistema operacional. `setMode('light' | 'dark' | 'system')` força um modo — usado hoje na tela de prévia e, no futuro, numa configuração do app.
+Por padrão segue o sistema operacional. `setMode('light' | 'dark' | 'system')` força um modo, e a escolha é gravada no aparelho (`AsyncStorage`, chave `yaya:tema`) — não no banco, porque é preferência de quem olha a tela e cada aparelho pode querer a sua. O controle fica em `/dona/preferencias`.
+
+A gravação é feita depois de aplicar na tela: esperar a escrita faria o toque parecer travado, e o pior caso de ela falhar é a escolha não sobreviver ao fechamento do app.
 
 **A regra que sustenta o resto:** nenhuma tela escreve cor à mão. Se aparecer um `#F4661F` fora de `src/constants/theme.ts`, o modo escuro vai quebrar naquele ponto e ninguém vai notar até alguém abrir o app à noite.
 
