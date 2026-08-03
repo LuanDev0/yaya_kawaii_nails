@@ -124,6 +124,24 @@ O que acontece depois depende da configuração: com aprovação manual ligada, 
 
 ---
 
+## Lançar agendamento pela dona
+**Camada 3** · quem usa: dona
+
+Muita cliente não vai abrir link nenhum — manda mensagem e pronto. Sem esta tela, a dona manteria uma agenda de papel em paralelo, e duas agendas viram duas agendas erradas.
+
+O painel tem um seletor entre **Gerenciar** e **Agendar**, e a segunda é esta tela.
+
+O fluxo é o mesmo da cliente, com duas diferenças:
+
+- **Escolher a cliente** de uma lista de quem já se atendeu, em vez de redigitar o telefone
+- **Escolher outro horário**, que dispensa a lista de vagas e aceita qualquer data e hora
+
+No modo livre, o app diz o que está sendo furado antes de confirmar — "dia fora do seu atendimento", "menos de 2h de antecedência" — e ela decide se segue.
+
+**Sobreposição é a única coisa que nem forçando passa.** O banco recusa, e com razão: ela é uma pessoa só.
+
+Agendamento lançado por ela nasce confirmado, nunca pendente: ela acabou de combinar com a cliente.
+
 ## Ver e gerenciar a agenda
 **Camada 3** · quem usa: dona
 

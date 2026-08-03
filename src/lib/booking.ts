@@ -147,6 +147,40 @@ export async function bookAppointment(
   return data as string;
 }
 
+/**
+ * O que está sendo furado num horário. Só a dona pode chamar.
+ * Lista vazia significa horário limpo.
+ */
+export async function slotWarnings(serviceIds: string[], startsAt: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc('slot_warnings', {
+    p_service_ids: serviceIds,
+    p_starts_at: startsAt,
+  });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as string[];
+}
+
+/** Lançamento pela dona, em nome de quem combinou por fora. */
+export async function bookAsOwner(
+  serviceIds: string[],
+  startsAt: string,
+  name: string,
+  phone: string,
+  force: boolean,
+): Promise<string> {
+  const { data, error } = await supabase.rpc('book_appointment_as_owner', {
+    p_service_ids: serviceIds,
+    p_starts_at: startsAt,
+    p_name: name,
+    p_phone: phone,
+    p_force: force,
+  });
+
+  if (error) throw new Error(error.message);
+  return data as string;
+}
+
 export async function getAppointment(id: string): Promise<AppointmentDetails | null> {
   const { data, error } = await supabase.rpc('appointment_details', { p_id: id });
 

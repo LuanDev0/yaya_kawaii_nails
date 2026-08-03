@@ -134,7 +134,8 @@ Dois públicos, dois tratamentos:
 | `/` | Agendamento pela cliente |
 | `/agendamento/[id]` | O agendamento dela, pelo código |
 | `/entrar` | Login da dona |
-| `/dona` | Painel |
+| `/dona` | Painel de configuração |
+| `/dona/agendar` | Lançamento de agendamento pela dona |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
 | `/dona/horarios` | Padrão semanal de atendimento |

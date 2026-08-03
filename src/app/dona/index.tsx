@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { OwnerModeSwitch } from '@/components/owner-mode-switch';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
@@ -32,6 +33,8 @@ export default function OwnerHomeScreen() {
         { paddingTop: insets.top + Spacing.four, paddingBottom: insets.bottom + Spacing.five },
       ]}>
       <View style={styles.inner}>
+        <OwnerModeSwitch />
+
         <AppText variant="title">Painel</AppText>
 
         <Card style={styles.card}>
