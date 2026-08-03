@@ -192,6 +192,8 @@ E duas que só a dona usa, para lançar agendamento de quem combinou por WhatsAp
 
 `book_appointment_as_owner` exige `is_owner()`. Sem essa checagem, qualquer pessoa chamaria a versão sem restrições e marcaria a madrugada inteira.
 
+> **Armadilha:** no Supabase, `grant execute ... to authenticated` **não** exclui a chave anônima — funções nascem executáveis por todos. Descobrimos testando: a chave pública conseguiu chamar `book_appointment_as_owner` e só foi barrada pelo `is_owner()` de dentro. Toda função restrita precisa de `revoke execute ... from anon, public` **e** da checagem interna. A permissão sozinha não segura.
+
 **O que nem forçando passa é sobreposição.** A constraint `sem_sobreposicao` recusa, e com razão: a dona é uma pessoa só, não existe caso legítimo de duas clientes no mesmo horário. Fora do expediente, em cima da hora e além da janela, sim — são decisões dela.
 
 Agendamento lançado por ela nasce `confirmado`, não `pendente`: ela acabou de combinar com a cliente, e deixar pendente a obrigaria a aprovar o próprio lançamento.
