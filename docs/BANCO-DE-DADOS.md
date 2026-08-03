@@ -62,7 +62,6 @@ Não há campo de dados de saúde. A anamnese fica em papel ([DT-010](DECISOES.m
 |---|---|---|
 | `id` | uuid | |
 | `client_id` | uuid | → `clients.id` |
-| `service_id` | uuid | → `services.id` |
 | `professional_id` | uuid | → `professionals.id` |
 | `starts_at` | timestamptz | |
 | `ends_at` | timestamptz | Fim do **atendimento**. É o que a cliente vê |
@@ -92,6 +91,29 @@ A exceção tanto abre quanto fecha, e é isso que faz o modelo servir para quem
 | Naquele sábado só de manhã | Linha na data, 09:00–12:00 |
 | Atender num domingo fora do padrão | Linha na data, com horário |
 | Férias | Uma linha por dia do período |
+
+### `appointment_services`
+
+Quais serviços compõem um atendimento. A cliente pode combinar alongamento com esmaltação na mesma sessão.
+
+| Coluna | Regra |
+|---|---|
+| `appointment_id` | → `appointments.id` |
+| `service_id` | → `services.id` |
+| `price_cents`, `discount_cents` | Congelados na marcação |
+| `duration_minutes`, `buffer_minutes` | Congelados na marcação |
+
+Tudo é cópia do momento da marcação, pelo mesmo motivo do preço: reajustar a tabela de serviços não pode reescrever o que já foi combinado.
+
+**Como as contas se combinam:**
+
+| Grandeza | Regra |
+|---|---|
+| Duração | **Soma.** 2h de alongamento + 1h30 de esmaltação = 3h30 de cadeira |
+| Preço | **Soma**, cada serviço com o desconto que estiver valendo nele |
+| Arrumação | **O maior**, não a soma |
+
+A arrumação ser o maior é decisão de ofício: a estação é limpa uma vez no fim, e o trabalho é o do procedimento mais pesado. Somar reservaria um tempo que não é usado e comeria agenda à toa.
 
 ### `business_hours`
 
@@ -179,9 +201,11 @@ A cliente não lê nem escreve nas tabelas de agendamento. Ela chama funções q
 
 | Função | Recebe | Devolve |
 |---|---|---|
-| `available_slots(servico, data)` | Serviço e data | Lista de horários vagos |
-| `book_appointment(servico, horario, nome, telefone)` | O essencial | O código do agendamento criado |
+| `available_slots(servicos[], data)` | Lista de serviços e a data | Horários vagos |
+| `book_appointment(servicos[], horario, nome, telefone)` | O essencial | O código do agendamento |
 | `appointment_details(codigo)` | O código | Aquele agendamento |
+
+`create_appointment` grava, e é compartilhada pelos dois caminhos — cliente e dona — para que a forma de gravar seja uma só. Ela não valida nada: quem chama já decidiu. Por isso não é executável por ninguém de fora.
 
 E duas que só a dona usa, para lançar agendamento de quem combinou por WhatsApp:
 
