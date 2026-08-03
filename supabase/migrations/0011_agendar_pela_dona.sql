@@ -57,6 +57,10 @@ declare
   v_duration integer; v_buffer integer; v_pro uuid;
   v_opens time; v_closes time; v_has_exception boolean;
   v_date date; v_occupies interval;
+  -- array_append em vez de `v_out || 'texto'`: com o operador, o Postgres fica
+  -- em dúvida se o texto é um item ou uma lista inteira, tenta interpretá-lo
+  -- como lista e quebra com "malformed array literal". E só quebra quando um
+  -- aviso é acionado, então passa pela criação da função sem reclamar.
   v_out text[] := '{}';
 begin
   select s.timezone, s.minimum_notice_hours, s.booking_window_days
@@ -80,34 +84,34 @@ begin
   where e.professional_id = v_pro and e.date = v_date;
 
   if v_has_exception and v_opens is null then
-    v_out := v_out || 'Dia marcado como sem atendimento';
+    v_out := array_append(v_out, 'Dia marcado como sem atendimento');
   elsif not coalesce(v_has_exception, false) then
     select b.opens_at, b.closes_at into v_opens, v_closes
     from business_hours b
     where b.professional_id = v_pro and b.weekday = extract(dow from v_date);
 
     if v_opens is null then
-      v_out := v_out || 'Dia fora do seu atendimento';
+      v_out := array_append(v_out, 'Dia fora do seu atendimento');
     end if;
   end if;
 
   if v_opens is not null then
     if p_starts_at < (v_date + v_opens) at time zone v_tz then
-      v_out := v_out || 'Antes do horário de abertura';
+      v_out := array_append(v_out, 'Antes do horário de abertura');
     end if;
     if p_starts_at + v_occupies > (v_date + v_closes) at time zone v_tz then
-      v_out := v_out || 'Passa do horário de fechamento, contando a arrumação';
+      v_out := array_append(v_out, 'Passa do horário de fechamento, contando a arrumação');
     end if;
   end if;
 
   if p_starts_at < now() then
-    v_out := v_out || 'Horário que já passou';
+    v_out := array_append(v_out, 'Horário que já passou');
   elsif p_starts_at < now() + make_interval(hours => v_notice) then
-    v_out := v_out || format('Menos de %sh de antecedência', v_notice);
+    v_out := array_append(v_out, format('Menos de %sh de antecedência', v_notice));
   end if;
 
   if v_date > ((now() at time zone v_tz)::date + v_window) then
-    v_out := v_out || 'Além da janela de agendamento';
+    v_out := array_append(v_out, 'Além da janela de agendamento');
   end if;
 
   -- Este é o único que nem forçando passa: a constraint do banco recusa.
@@ -118,7 +122,7 @@ begin
       and tstzrange(a.starts_at, a.blocked_until)
           && tstzrange(p_starts_at, p_starts_at + v_occupies)
   ) then
-    v_out := v_out || 'Choca com outro atendimento — isto o banco não deixa nem forçando';
+    v_out := array_append(v_out, 'Choca com outro atendimento — isto o banco não deixa nem forçando');
   end if;
 
   return v_out;
@@ -199,6 +203,17 @@ begin
 
   return v_appointment;
 end $$;
+
+-- O Supabase concede execução de funções ao público por padrão, então
+-- `grant ... to authenticated` NÃO exclui a chave anônima — é preciso revogar.
+--
+-- Descoberto testando: a chave pública conseguiu executar
+-- book_appointment_as_owner e só foi barrada pelo `is_owner()` de dentro. A
+-- permissão sozinha não teria segurado; a checagem dentro da função sim. As
+-- duas juntas é o certo.
+revoke execute on function slot_warnings(uuid, timestamptz) from anon, public;
+revoke execute on function book_appointment_as_owner(uuid, timestamptz, text, text, boolean)
+  from anon, public;
 
 grant execute on function service_price_on(uuid, date) to anon, authenticated;
 grant execute on function slot_warnings(uuid, timestamptz) to authenticated;
