@@ -131,7 +131,8 @@ Dois públicos, dois tratamentos:
 
 | Rota | O que é |
 |---|---|
-| `/` | Prévia da identidade (temporária) |
+| `/` | Agendamento pela cliente |
+| `/agendamento/[id]` | O agendamento dela, pelo código |
 | `/entrar` | Login da dona |
 | `/dona` | Painel |
 | `/dona/servicos` | Lista de serviços |
@@ -142,8 +143,15 @@ Dois públicos, dois tratamentos:
 
 Tudo sob `/dona` passa pelo guardião de `src/app/dona/_layout.tsx`.
 
+### A tela da cliente é uma só
+
+Serviços, data, horário e dados aparecem como etapas na mesma tela, conforme ela avança. Em celular, trocar de tela a cada passo faz perder o contexto do que já foi escolhido, e voltar para corrigir vira aventura.
+
+Trocar de serviço limpa o horário escolhido de propósito: a duração muda, e o horário pode não caber mais. Manter uma escolha que virou inválida é pior que pedir para escolher de novo.
+
+`src/lib/booking.ts` é o único caminho: nada ali monta consulta na tabela de agendamentos, tudo passa pelas funções do banco.
+
 ## O que ainda não existe
 
-- **Rotas da cliente.** O fluxo de agendamento é a camada 3.
-- **Telas de configuração.** Serviços, horários e preferências — camada 2, em construção.
-- **Escrita pela cliente.** As políticas hoje permitem escrita apenas para a dona.
+- **Agenda da dona.** Ver o dia, aprovar, cancelar, concluir.
+- **Lançamento pela dona**, para quem combinou por WhatsApp.
