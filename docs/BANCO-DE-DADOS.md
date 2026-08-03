@@ -183,6 +183,19 @@ A cliente não lê nem escreve nas tabelas de agendamento. Ela chama funções q
 | `book_appointment(servico, horario, nome, telefone)` | O essencial | O código do agendamento criado |
 | `appointment_details(codigo)` | O código | Aquele agendamento |
 
+E duas que só a dona usa, para lançar agendamento de quem combinou por WhatsApp:
+
+| Função | Para que |
+|---|---|
+| `slot_warnings(servico, horario)` | O que está sendo furado naquele horário. Lista vazia = limpo |
+| `book_appointment_as_owner(…, forcar)` | Lança o agendamento; com `forcar`, ignora as restrições |
+
+`book_appointment_as_owner` exige `is_owner()`. Sem essa checagem, qualquer pessoa chamaria a versão sem restrições e marcaria a madrugada inteira.
+
+**O que nem forçando passa é sobreposição.** A constraint `sem_sobreposicao` recusa, e com razão: a dona é uma pessoa só, não existe caso legítimo de duas clientes no mesmo horário. Fora do expediente, em cima da hora e além da janela, sim — são decisões dela.
+
+Agendamento lançado por ela nasce `confirmado`, não `pendente`: ela acabou de combinar com a cliente, e deixar pendente a obrigaria a aprovar o próprio lançamento.
+
 ### Por que não abrir as tabelas
 
 **Para ler:** calcular a disponibilidade no app exigiria baixar os agendamentos para o navegador dela — e aí nome, telefone e serviço das outras clientes já vazaram. Esconder na tela não desfaz o download.
