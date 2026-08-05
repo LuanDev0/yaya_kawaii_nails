@@ -240,6 +240,19 @@ Sem senha (DT-004), o código do agendamento é a prova de posse: um identificad
 
 **Não existe busca por telefone**, de propósito: ela deixaria qualquer pessoa que saiba o número de outra ver o histórico dela.
 
+## Fotos: dois depósitos, não um
+
+| Depósito | Acesso | Para que |
+|---|---|---|
+| `galeria` | **Público** | Vitrine, feita para ser vista |
+| `atendimentos` | **Privado**, com link temporário | A unha da cliente no histórico dela |
+
+A separação existe por consentimento, não por capricho técnico. A cliente que faz uma manutenção não escolheu aparecer em vitrine nenhuma — e depósito público no Supabase serve qualquer endereço que alguém descubra, sem checar quem pediu.
+
+As tabelas `gallery_photos` e `appointment_photos` guardam o caminho do arquivo, a legenda e a ordem. `appointment_photos` não tem política para a chave pública: nem a existência da foto é assunto da cliente.
+
+Apagar o registro apaga o arquivo junto — foto órfã no depósito é conta que cresce sem ninguém ver.
+
 ## Regras de acesso (RLS)
 
 RLS ligado em todas as tabelas. **Sem política, ninguém lê nem escreve** — o padrão é negar.

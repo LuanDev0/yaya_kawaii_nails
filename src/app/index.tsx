@@ -6,6 +6,7 @@
  * contexto do que já foi escolhido — e voltar para corrigir vira aventura.
  */
 
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -28,6 +29,7 @@ import {
 import { todayISO, type ISODate } from '@/lib/calendar';
 import { WEEKDAYS, formatDuration, formatPrice } from '@/lib/format';
 import { finalPriceCents, hasDiscount } from '@/lib/pricing';
+import { listGalleryPhotos, type GalleryPhoto } from '@/lib/photos';
 import { listActiveServices, type Service } from '@/lib/services';
 
 export default function BookingScreen() {
@@ -46,6 +48,7 @@ export default function BookingScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [total, setTotal] = useState({ duration_minutes: 0, buffer_minutes: 0 });
+  const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,6 +61,12 @@ export default function BookingScreen() {
 
         setServices(list);
         setOpenDates(await listOpenDates(rules.booking_window_days));
+
+        // A vitrine é enfeite: se falhar, a cliente ainda precisa conseguir
+        // agendar. Por isso vem depois e não derruba a tela.
+        listGalleryPhotos()
+          .then((photos) => active && setGallery(photos))
+          .catch(() => {});
       })
       .catch((cause: Error) => active && setError(cause.message));
 
@@ -150,6 +159,23 @@ export default function BookingScreen() {
               {error}
             </AppText>
           </Card>
+        ) : null}
+
+        {gallery.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery}>
+            <View style={styles.galleryRow}>
+              {gallery.map((photo) => (
+                <Image
+                  key={photo.id}
+                  source={{ uri: photo.url }}
+                  style={styles.galleryPhoto}
+                  contentFit="cover"
+                  transition={200}
+                  accessibilityLabel={photo.caption ?? 'Trabalho da Yaya'}
+                />
+              ))}
+            </View>
+          </ScrollView>
         ) : null}
 
         <Step number={1} title="O que você quer fazer" />
@@ -393,6 +419,9 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.three },
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   subtitle: { marginTop: Spacing.one },
+  gallery: { marginTop: Spacing.four },
+  galleryRow: { flexDirection: 'row', gap: Spacing.two },
+  galleryPhoto: { width: 150, height: 150, borderRadius: Radius.medium },
   errorCard: { marginTop: Spacing.three },
   step: {
     flexDirection: 'row',

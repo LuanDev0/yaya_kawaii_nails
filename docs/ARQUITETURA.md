@@ -145,6 +145,7 @@ Dois públicos, dois tratamentos:
 | `/dona/clientes` | Lista de clientes |
 | `/dona/cliente/[id]` | Ficha e histórico de uma cliente |
 | `/dona/retorno` | Quem passou do prazo e ainda não remarcou |
+| `/dona/galeria` | Vitrine de trabalhos |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
 | `/dona/horarios` | Padrão semanal de atendimento |
