@@ -14,8 +14,9 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const MODES = [
-  { href: '/dona', label: 'Gerenciar' },
+  { href: '/dona', label: 'Agenda' },
   { href: '/dona/agendar', label: 'Agendar' },
+  { href: '/dona/configuracao', label: 'Configurar' },
 ] as const;
 
 export function OwnerModeSwitch() {

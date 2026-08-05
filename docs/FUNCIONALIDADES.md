@@ -145,9 +145,15 @@ Agendamento lançado por ela nasce confirmado, nunca pendente: ela acabou de com
 ## Ver e gerenciar a agenda
 **Camada 3** · quem usa: dona
 
-A tela principal do app. Mostra os agendamentos do dia e dos próximos dias, com destaque para os que estão pendentes de aprovação.
+A tela inicial da área dela, porque é a do dia a dia. Duas listas.
 
-Ações sobre um agendamento: aprovar, recusar, cancelar, marcar como concluído.
+**Precisam de você** junta dois casos que parecem diferentes e não são: o pedido que ninguém aprovou, e o atendimento confirmado cuja hora já passou sem ser fechado. Os dois são a agenda cobrando uma resposta — e o segundo é justamente o que some da vista quando a lista só mostra o futuro.
+
+**Próximos** traz o que vem pela frente.
+
+Ações conforme o estado: pendente pode ser aprovado ou recusado; confirmado que já passou pode ser concluído ou cancelado; confirmado no futuro só pode ser cancelado.
+
+Cancelar libera o horário na hora, sem passo extra: a trava de sobreposição só considera pendente e confirmado, então o espaço volta a ser oferecido sozinho.
 
 ---
 

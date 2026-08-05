@@ -134,8 +134,9 @@ Dois públicos, dois tratamentos:
 | `/` | Agendamento pela cliente |
 | `/agendamento/[id]` | O agendamento dela, pelo código |
 | `/entrar` | Login da dona |
-| `/dona` | Painel de configuração |
+| `/dona` | **Agenda** — a tela do dia a dia |
 | `/dona/agendar` | Lançamento de agendamento pela dona |
+| `/dona/configuracao` | Painel de configuração |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
 | `/dona/horarios` | Padrão semanal de atendimento |
@@ -152,7 +153,10 @@ Trocar de serviço limpa o horário escolhido de propósito: a duração muda, e
 
 `src/lib/booking.ts` é o único caminho: nada ali monta consulta na tabela de agendamentos, tudo passa pelas funções do banco.
 
+### A agenda da dona consulta as tabelas direto
+
+`src/lib/agenda.ts` é a exceção, e de propósito: a política de acesso já reconhece a dona, e ela pode ver tudo. As funções do banco existem para proteger a cliente, que não pode — usá-las aqui só acrescentaria uma camada sem proteger nada.
+
 ## O que ainda não existe
 
-- **Agenda da dona.** Ver o dia, aprovar, cancelar, concluir.
-- **Lançamento pela dona**, para quem combinou por WhatsApp.
+Da camada 4 em diante: ficha e histórico da cliente, mensagens de WhatsApp, lembrete de retorno, fotos e faturamento. Ver o [README](../README.md).
