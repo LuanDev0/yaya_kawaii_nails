@@ -49,6 +49,26 @@ npm run web
 | `npm run android` | Abre num emulador Android |
 | `npx tsc --noEmit` | Verifica erros de tipo sem gerar arquivos |
 
+## Gerar o APK
+
+O build roda na nuvem da Expo — não é preciso instalar Android Studio.
+
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest build -p android --profile preview
+```
+
+O perfil `preview` gera **APK**, que instala direto no celular. O perfil `production` gera **app-bundle**, formato exigido pela Play Store — só serve quando for publicar.
+
+As credenciais do Supabase não vão no repositório, então precisam ser cadastradas uma vez como variáveis de ambiente do projeto no [painel da Expo](https://expo.dev), no ambiente `preview`:
+
+| Variável | Onde achar |
+|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Idem, a chave `anon` |
+
+Sem elas o app compila e abre com erro dizendo o que falta.
+
 ## Stack escolhida
 
 - **React Native com Expo** (TypeScript) — um código para iPhone e Android, e também para navegador
