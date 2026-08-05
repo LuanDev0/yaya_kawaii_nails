@@ -1,6 +1,158 @@
 # Decisões técnicas
 
-Todas as decisões abaixo foram tomadas em **julho de 2026**, antes de existir código, numa conversa de definição de escopo. Mais recente no topo.
+Todas de **julho de 2026**. Da DT-001 à DT-011, tomadas numa conversa de definição de escopo, antes de existir código; da DT-012 em diante, durante a construção. Mais recente no topo.
+
+---
+
+## DT-017 — Intervalo de arrumação por serviço, e não do salão
+**Situação:** aceita
+
+### Contexto
+O plano era guardar um intervalo único entre atendimentos, na configuração do salão. Perguntada quantos minutos, a dona respondeu que depende: alguns procedimentos pedem 5 minutos de arrumação, outros 25.
+
+### Decisão
+`buffer_minutes` é coluna de `services`, não de `settings`.
+
+O tempo de arrumação é propriedade do procedimento, não do salão — blindagem sempre vai dar menos trabalho que alongamento, em qualquer dia. Um número único do salão seria uma média que não descreve nenhum dos dois casos: apertada para o serviço pesado, desperdiçando agenda no serviço leve.
+
+### O agendamento guarda dois marcos
+
+| Campo | Significa | Quem vê |
+|---|---|---|
+| `ends_at` | Fim do atendimento | A cliente |
+| `blocked_until` | Fim da arrumação | Só a agenda |
+
+Somar o intervalo à duração e guardar um número só faria a cliente ler "das 14h às 16h55" quando 25 daqueles minutos são a mesa sendo limpa. A separação mantém honesto o que se mostra a ela e correto o que a agenda bloqueia.
+
+A trava de sobreposição passou a usar `blocked_until`, então o banco continua sendo quem garante que ninguém marca em cima — agora incluindo a arrumação.
+
+### Alternativas consideradas
+- **Somar o intervalo ao `ends_at`** — uma coluna a menos, mas a cliente veria um horário de término que não é o dela
+- **Intervalo único na configuração** — mais simples, mas obrigaria escolher entre agenda apertada ou desperdiçada
+
+### Consequências
+- Cada serviço declara seu próprio tempo de arrumação, com padrão zero
+- `blocked_until` é calculado pelo app ao marcar, e não pelo banco: `timestamptz + interval` não é imutável no Postgres e por isso não pode entrar na expressão de uma constraint
+
+---
+
+## DT-016 — Disponibilidade como padrão semanal mais exceções por data
+**Situação:** aceita
+
+### Contexto
+O modelo inicial tinha só um padrão semanal fixo: uma faixa por dia da semana. A dona informou que o salão é trabalho secundário no início e que os horários vão mudar com frequência enquanto ela se ajeita.
+
+Com só o padrão semanal, cada mudança exigiria reeditar os sete dias. Trabalho chato o bastante para ela deixar de fazer — e agenda desatualizada oferece horário que não existe, o que é pior que agenda nenhuma.
+
+Perguntada se havia algum padrão, respondeu que ainda não sabe.
+
+### Decisão
+Manter `business_hours` como padrão semanal e acrescentar `schedule_exceptions`, com uma linha por data.
+
+Uma exceção com horário **substitui** o padrão naquela data. Uma exceção **sem** horário fecha o dia.
+
+### Por que isto também resolve o "ainda não sei"
+
+Como a exceção tanto fecha quanto abre, o mesmo modelo atende os dois cenários sem alteração:
+
+- **Com padrão:** cadastra o padrão semanal e marca só o que foge dele
+- **Sem padrão:** deixa o padrão vazio e abre data por data
+
+A escolha passa a ser de uso, não de estrutura. Ela decide com a prática, e mudar de ideia não custa migração.
+
+### Alternativas consideradas
+- **Só datas específicas, sem padrão semanal** — máxima flexibilidade, mas obrigaria a abrir cada dia toda semana mesmo depois que a rotina estabilizasse
+- **Tabela separada para férias, com intervalo de datas** — evitaria uma linha por dia, mas criaria um segundo lugar onde procurar quando o app calcula disponibilidade. Um caminho só é mais fácil de manter correto que dois
+
+### Consequências
+- O cálculo de disponibilidade consulta padrão, exceções e agendamentos existentes
+- Férias viram várias linhas; a tela cria a partir de um intervalo, então ela não digita dia por dia
+- A chave primária `(professional_id, date)` garante uma exceção por data, sem ambiguidade
+
+---
+
+## DT-015 — Configuração antes do agendamento
+**Situação:** aceita
+
+### Contexto
+O plano original deixava a tela de configuração por último (camada 7). Ao ser perguntada pelos serviços e horários reais, a dona respondeu que prefere cadastrá-los ela mesma, na tela.
+
+Isso deixaria toda a construção acontecendo sobre dados inventados — inclusive a lógica de "quais horários estão livres", que é a parte mais delicada do agendamento.
+
+### Decisão
+Trocar a ordem: login e configuração viram a camada 2, e o agendamento passa a ser a camada 3.
+
+### Consequências
+- A lógica de disponibilidade é construída e testada contra os horários e durações reais do salão. Testar com dado falso esconde bug que só aparece com dado real
+- A primeira versão utilizável demora um pouco mais a aparecer
+- O login precisava existir antes da configuração de qualquer forma (DT-014), então as duas caminham juntas
+
+---
+
+## DT-014 — Login da dona por email e senha, vinculado à profissional
+**Situação:** aceita
+
+### Contexto
+A cliente não tem login (DT-004), mas as regras de acesso do banco bloqueiam toda escrita. Sem uma identidade autenticada, a dona não consegue salvar configuração, aprovar agendamento nem cadastrar cliente.
+
+### Decisão
+Autenticação por email e senha, usando o Supabase Auth. E — este é o ponto que importa — a conta é **vinculada** a uma linha de `professionals` por uma coluna `auth_user_id`.
+
+As políticas de acesso perguntam *"existe uma profissional cujo `auth_user_id` é o usuário logado?"*, e não simplesmente *"está logado?"*.
+
+### Por que o vínculo, e não só "está logado"
+
+O Supabase vem com cadastro aberto por padrão. A regra ingênua trataria qualquer pessoa que criasse uma conta no projeto como se fosse a dona, dando acesso à agenda e aos dados das clientes.
+
+Com o vínculo, uma conta criada por fora não corresponde a nenhuma profissional e não enxerga nada. A segurança deixa de depender de lembrar de desligar o cadastro no painel.
+
+### Alternativas consideradas
+- **Link mágico por email** — dispensa senha, mas depende de acesso ao email no momento de entrar
+- **PIN de quatro dígitos no app** — mais cômodo, porém qualquer pessoa com o link e o PIN entra como a dona, e o PIN teria que ficar guardado de forma que não protege de verdade. Inaceitável com dados de cliente no banco
+
+### Consequências
+- Só a cliente fica sem senha; a gestão é autenticada
+- Funciona sem alteração quando houver mais de uma profissional (DT-007)
+- `src/lib/supabase.ts` precisa passar a persistir sessão, hoje desligada
+
+---
+
+## DT-013 — Código em inglês, interface em português
+**Situação:** aceita
+
+### Contexto
+O projeto é de uma desenvolvedora brasileira, para um público brasileiro. Não era óbvio se os nomes de variáveis, funções e componentes deveriam acompanhar o idioma da interface.
+
+### Decisão
+Identificadores em inglês (`Button`, `useTheme`, `appointments`). Todo texto que o usuário lê, em português.
+
+### Alternativas consideradas
+- **Tudo em português** — mais confortável de ler para quem está começando, mas geraria mistura constante com as APIs do React Native, que são em inglês: `onPress` ao lado de `aoApertar`, `useState` ao lado de `definirModo`. O código fica com dois vocabulários disputando a mesma linha.
+
+### Consequências
+- Consistência com React Native, Expo e com os nomes de tabela do banco
+- Se um dia outra pessoa entrar no projeto, o código está no padrão que ela espera
+- Exige atenção para não deixar português vazar em nome de variável
+
+---
+
+## DT-012 — Estilo com StyleSheet e módulo de tema, sem biblioteca de UI
+**Situação:** aceita
+
+### Contexto
+A identidade visual é bem específica: laranja kawaii, cantos bem arredondados, Baloo 2 nos títulos.
+
+### Decisão
+Escrever os estilos com o `StyleSheet` do próprio React Native, alimentado por um módulo de tema em `src/constants/theme.ts`.
+
+### Alternativas consideradas
+- **Biblioteca pronta (React Native Paper, Tamagui)** — traria componentes com visual próprio que teríamos que sobrescrever peça por peça. Numa marca tão caracterizada, a biblioteca vira obstáculo em vez de atalho.
+- **NativeWind** — classes curtas no estilo Tailwind, mas adiciona um passo de build que costuma quebrar em upgrade de SDK do Expo. Custo alto de manutenção para um projeto de uma pessoa só.
+
+### Consequências
+- Controle total sobre o visual, sem lutar contra padrão de terceiro
+- Mais código escrito à mão nos componentes base — pago uma vez, reaproveitado sempre
+- A regra "nenhuma tela escreve cor à mão" passa a ser o que garante o modo escuro; se alguém furar, quebra silenciosamente
 
 ---
 

@@ -4,9 +4,48 @@ Sistema de agendamento para salão de manicure, pedicure e nail design — gest�
 
 ## Status
 
-**Em definição.** Julho de 2026: o escopo e as decisões técnicas estão fechados, mas ainda não há código. A próxima etapa é criar o projeto Expo com o tema da marca.
+**Camadas 1, 2 e 3 concluídas** (julho e agosto de 2026). O app já é utilizável no salão:
 
-Não há nada para instalar ou rodar ainda — esta seção ganha conteúdo assim que a camada 1 existir.
+- A cliente abre o link, escolhe um ou vários serviços, vê os horários livres e agenda
+- A dona vê a agenda, aprova, cancela e conclui
+- A dona lança agendamento por quem combinou por WhatsApp, com opção de encaixar fora do expediente
+- Serviços, horários, folgas, promoções e preferências são configurados por ela
+
+Próximo passo: camada 4, ficha e histórico da cliente.
+
+## Como rodar
+
+### Pré-requisitos
+- Node 20 ou superior
+- App **Expo Go** no celular ([Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent))
+
+### Passo a passo
+```bash
+npm install
+cp .env.example .env
+npm start
+```
+
+Preencha o `.env` com a URL e a chave `anon` do projeto Supabase (painel → Settings → API Keys). Sem isso o app não abre — e o erro diz exatamente o que está faltando.
+
+As variáveis só são lidas quando o servidor inicia: se editar o `.env`, reinicie o `npm start`.
+
+Um QR code aparece no terminal. Abra o Expo Go no celular e aponte a câmera para ele — o app carrega e recarrega sozinho a cada alteração no código.
+
+Para abrir no navegador em vez do celular, tecle `w` com o servidor rodando, ou:
+
+```bash
+npm run web
+```
+
+### Outros comandos
+
+| Comando | O que faz |
+|---|---|
+| `npm start` | Servidor de desenvolvimento com QR code |
+| `npm run web` | Abre direto no navegador |
+| `npm run android` | Abre num emulador Android |
+| `npx tsc --noEmit` | Verifica erros de tipo sem gerar arquivos |
 
 ## Stack escolhida
 
@@ -26,19 +65,23 @@ Dois públicos, dois caminhos de acesso:
 
 O app sai em camadas, cada uma utilizável sozinha:
 
-1. Fundação — projeto, tema, banco de dados
-2. Agendar — cliente marca pelo link, dona vê e aprova ← *primeira versão usável*
-3. Clientes — ficha, histórico
-4. WhatsApp — confirmação, lembrete e retorno
-5. Fotos — galeria e registro dos atendimentos
-6. Financeiro — faturamento
-7. Configurações — horários, aprovação, cancelamento
+1. ~~Fundação — projeto, tema, banco de dados~~ ✅
+2. ~~Login e configuração~~ ✅
+3. ~~Agendar — cliente marca pelo link, dona vê e aprova~~ ✅ ← *já dá para usar no salão*
+4. Clientes — ficha, histórico
+5. WhatsApp — confirmação, lembrete e retorno
+6. Fotos — galeria e registro dos atendimentos
+7. Financeiro — faturamento
+8. Refinamento — acertar o que o uso real mostrar
+
+A configuração era a última camada e passou para a segunda: sem ela, a lógica de horários livres seria construída sobre serviços e horários inventados ([DT-015](docs/DECISOES.md)).
 
 O detalhe de cada uma está em [Funcionalidades](docs/FUNCIONALIDADES.md).
 
 ## Documentação
 
+- [Arquitetura](docs/ARQUITETURA.md) — como o código é organizado e como o tema funciona
 - [Funcionalidades](docs/FUNCIONALIDADES.md) — o que o app faz, passo a passo
 - [Decisões técnicas](docs/DECISOES.md) — por que as coisas são do jeito que são
 
-`docs/ARQUITETURA.md` e `docs/BANCO-DE-DADOS.md` entram quando houver código e schema — documentar pastas e tabelas que ainda não existem seria inventar.
+`docs/BANCO-DE-DADOS.md` entra junto com o schema, na camada 1B.

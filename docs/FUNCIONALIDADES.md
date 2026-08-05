@@ -1,20 +1,88 @@
 # Funcionalidades
 
-> **Nada aqui está implementado ainda.** Este documento registra o escopo acordado em julho de 2026, para servir de referência durante a construção. Cada funcionalidade indica em qual camada entra — a ordem está no [README](../README.md).
+> Escopo acordado em julho de 2026. Cada funcionalidade indica em qual camada entra — a ordem está no [README](../README.md). As camadas 1 e 2 estão construídas; da 3 em diante, este documento descreve o combinado, não o que existe.
 
 ## Perfis de usuário
 
 | Perfil | Quem é | Como acessa | O que pode fazer |
 |---|---|---|---|
-| Dona do salão | Quem atende | App instalado no celular | Tudo: agenda, clientes, serviços, horários, fotos, financeiro |
+| Dona do salão | Quem atende | App instalado, com login | Tudo: agenda, clientes, serviços, horários, fotos, financeiro |
 | Cliente | Quem marca horário | Link no navegador, sem instalar | Ver serviços, agendar, cancelar, ver os próprios agendamentos |
 
-A cliente não tem senha. Ela é identificada pelo telefone informado ao agendar, e o navegador dela guarda quem ela é. Não existe tela de consulta por telefone — o porquê está em [DT-004](DECISOES.md#dt-004--identificação-por-nome-e-telefone-sem-senha).
+A cliente não tem senha. Ela é identificada pelo telefone informado ao agendar, e o navegador dela guarda quem ela é. Não existe tela de consulta por telefone — o porquê está em [DT-004](DECISOES.md).
+
+A dona tem login por email e senha, vinculado à profissional cadastrada ([DT-014](DECISOES.md)).
+
+---
+
+## Entrar no app
+**Camada 2** · quem usa: dona
+
+Tela de email e senha. Uma vez logada, o app guarda a sessão — na prática a senha é digitada uma vez e não volta a aparecer.
+
+Não há tela de cadastro. A conta é criada uma única vez, por fora, e ligada à linha da profissional no banco. Conta criada por fora desse vínculo não enxerga nada.
+
+---
+
+## Configurar o salão
+**Camada 2** · quem usa: dona
+
+Onde a dona substitui os dados de exemplo pelos reais. Foi promovida da última para a segunda camada porque a lógica de horários livres precisa ser construída sobre dados verdadeiros ([DT-015](DECISOES.md)).
+
+### Serviços
+
+Cadastrar, editar, reordenar e desativar. Cada serviço tem nome, descrição, preço, duração e tempo de arrumação.
+
+A **descrição** conta o que está incluso, e é a cliente quem lê — é onde "alongamento em gel" vira "aplicação em gel, cutícula, esmaltação e finalização com óleo".
+
+As setas na lista mudam a ordem em que a cliente vê os serviços.
+
+Desativar em vez de apagar: serviço que já foi agendado não pode sumir, senão o histórico e o faturamento ficam com buracos.
+
+**Promoção.** Cada serviço aceita um desconto, em valor fixo ou em porcentagem, com prazo de início e fim. O preço cheio continua guardado, então a promoção acaba sozinha e o valor volta — e a cliente vê "de R$ 120 por R$ 96", que comunica melhor que só o valor final.
+
+Os dois prazos são opcionais. Com início no futuro, a promoção fica agendada e entra sozinha no dia; a data final vale até o último dia, inclusive.
+
+Cada serviço também declara seu **tempo de arrumação** — os minutos de limpeza e preparo depois do atendimento. Depende do procedimento, não do salão ([DT-017](DECISOES.md)): a agenda bloqueia esse tempo, e a cliente não o vê.
+
+### Horários de atendimento
+
+O padrão semanal: que dias atende e de que hora a que hora.
+
+### Disponibilidade
+
+O calendário onde a dona ajusta as datas que fogem do padrão ([DT-016](DECISOES.md)). Tocando num dia, ela escolhe:
+
+| Opção | Efeito |
+|---|---|
+| Padrão | Aquele dia volta a seguir o padrão semanal |
+| Não atender | Fecha o dia, mesmo que o padrão diga que atende |
+| Horário diferente | Uma faixa própria só naquela data |
+
+Há também um atalho para fechar um período inteiro — férias, viagem — sem marcar dia por dia.
+
+Cada exceção aceita um motivo, visível só para a dona. A cliente enxerga que o dia está fechado, não o porquê.
+
+**Como usar sem ter rotina fixa:** deixando o padrão semanal vazio e abrindo data por data, o mesmo calendário atende quem não tem semana igual à outra.
+
+### Preferências
+
+| Configuração | Padrão | O que muda |
+|---|---|---|
+| Aprovar cada agendamento | ligado | Desligado, o horário já nasce confirmado |
+| Cliente pode cancelar sozinha | ligado | Desligado, ela precisa falar com a dona |
+| Prazo de retorno | 21 dias | Quantos dias até a cliente entrar na lista de quem está na hora de voltar |
+| Agenda aberta por | 14 dias | Até quando à frente a cliente consegue marcar |
+| Antecedência mínima | 3 horas | Quanto tempo antes, no mínimo, ela pode marcar |
+
+Há ainda o **tema do app** — do sistema, claro ou escuro. Diferente das demais, essa escolha fica no aparelho e não no banco: é preferência de quem está olhando a tela, e cada aparelho pode querer a sua. Ela é lembrada entre aberturas.
+
+As duas primeiras são chaves justamente para poderem mudar sem mexer no código ([DT-008](DECISOES.md)).
 
 ---
 
 ## Agendar um horário
-**Camada 2** · quem usa: cliente
+**Camada 3** · quem usa: cliente
 
 ```mermaid
 graph LR
@@ -56,43 +124,73 @@ O que acontece depois depende da configuração: com aprovação manual ligada, 
 
 ---
 
+## Lançar agendamento pela dona
+**Camada 3** · quem usa: dona
+
+Muita cliente não vai abrir link nenhum — manda mensagem e pronto. Sem esta tela, a dona manteria uma agenda de papel em paralelo, e duas agendas viram duas agendas erradas.
+
+O painel tem um seletor entre **Gerenciar** e **Agendar**, e a segunda é esta tela.
+
+O fluxo é o mesmo da cliente, com duas diferenças:
+
+- **Escolher a cliente** de uma lista de quem já se atendeu, em vez de redigitar o telefone
+- **Escolher outro horário**, que dispensa a lista de vagas e aceita qualquer data e hora
+
+No modo livre, o app diz o que está sendo furado antes de confirmar — "dia fora do seu atendimento", "menos de 2h de antecedência" — e ela decide se segue.
+
+**Sobreposição é a única coisa que nem forçando passa.** O banco recusa, e com razão: ela é uma pessoa só.
+
+Agendamento lançado por ela nasce confirmado, nunca pendente: ela acabou de combinar com a cliente.
+
 ## Ver e gerenciar a agenda
-**Camada 2** · quem usa: dona
+**Camada 3** · quem usa: dona
 
-A tela principal do app. Mostra os agendamentos do dia e dos próximos dias, com destaque para os que estão pendentes de aprovação.
+A tela inicial da área dela, porque é a do dia a dia. Duas listas.
 
-Ações sobre um agendamento: aprovar, recusar, cancelar, marcar como concluído.
+**Precisam de você** junta dois casos que parecem diferentes e não são: o pedido que ninguém aprovou, e o atendimento confirmado cuja hora já passou sem ser fechado. Os dois são a agenda cobrando uma resposta — e o segundo é justamente o que some da vista quando a lista só mostra o futuro.
+
+**Próximos** traz o que vem pela frente.
+
+Ações conforme o estado: pendente pode ser aprovado ou recusado; confirmado que já passou pode ser concluído ou cancelado; confirmado no futuro só pode ser cancelado.
+
+Cancelar libera o horário na hora, sem passo extra: a trava de sobreposição só considera pendente e confirmado, então o espaço volta a ser oferecido sozinho.
 
 ---
 
 ## Cancelar um agendamento
-**Camada 2** · quem usa: cliente e dona
+**Camada 3** · quem usa: cliente e dona
 
-A cliente pode cancelar a qualquer momento, e o horário volta a ficar disponível. Este comportamento é uma configuração — se o cancelamento em cima da hora virar problema, dá para restringir a um prazo mínimo sem mexer no código ([DT-008](DECISOES.md#dt-008--aprovação-e-cancelamento-como-configuração-não-regra-fixa)).
+A cliente pode cancelar a qualquer momento, e o horário volta a ficar disponível. Este comportamento é uma configuração — se o cancelamento em cima da hora virar problema, dá para restringir a um prazo mínimo sem mexer no código ([DT-008](DECISOES.md)).
 
 A dona pode cancelar qualquer agendamento.
 
 ---
 
 ## Ficha e histórico da cliente
-**Camada 3** · quem usa: dona
+**Camada 4** · quem usa: dona
 
-Cada cliente tem uma ficha com:
+As clientes entram sozinhas na lista quando agendam pela primeira vez — ou quando a dona lança um agendamento por elas. Não há cadastro manual, porque não haveria como usar uma ficha sem agendamento.
+
+Cada uma tem:
 
 - Nome e telefone
-- Observações livres
-- Preferências de unha (formato, tamanho, cores)
 - Aniversário
-- Histórico de atendimentos, com data, serviço e valor
+- Preferências de unha (formato, tamanho, cores)
+- Observações livres
+- Histórico de atendimentos, com data, serviços, valor e situação
 
-> ⚠️ **A confirmar:** o campo de alergias e sensibilidades permanece? A anamnese completa ficou no papel ([DT-010](DECISOES.md#dt-010--anamnese-fica-no-papel-fora-do-app)), e falta decidir se um campo curto de alerta ainda vale na tela.
+O histórico traz **também os cancelados**. Saber que alguém desmarcou três vezes é informação; escondê-los deixaria a lista contando meia verdade.
 
-A anamnese **não** faz parte do app. O salão usa ficha física.
+Acima da ficha aparece quanto ela já gastou, contando só os concluídos — agendamento marcado ainda não é dinheiro.
+
+Chega-se à ficha por dois caminhos: pela lista em Configurar → Clientes, ou tocando no nome dela num cartão da agenda.
+
+A anamnese **não** faz parte do app: o salão usa ficha física ([DT-010](DECISOES.md)). Como consequência, o app não guarda nenhum dado de saúde — nem um campo curto de alergias.
 
 ---
 
 ## Avisos por WhatsApp
-**Camada 4** · quem usa: dona
+**Camada 5** · quem usa: dona
 
 O app não envia nada sozinho. Ele monta a mensagem e abre o WhatsApp para a dona apertar enviar.
 
@@ -107,16 +205,16 @@ Três momentos geram mensagem:
 ---
 
 ## Lembrete de retorno
-**Camada 4** · quem usa: dona
+**Camada 5** · quem usa: dona
 
 Alongamento pede manutenção periódica. O app mostra uma lista de clientes que passaram do prazo desde o último atendimento e ainda não remarcaram, com a mensagem de WhatsApp pronta para enviar.
 
-> ⚠️ **A confirmar:** quantos dias após o atendimento a cliente entra nessa lista. Varia por serviço?
+O prazo é definido pela dona na configuração.
 
 ---
 
 ## Fotos dos trabalhos
-**Camada 5**
+**Camada 6**
 
 Dois usos distintos:
 
@@ -128,33 +226,35 @@ A cliente não envia foto de referência ao agendar.
 ---
 
 ## Faturamento
-**Camada 6** · quem usa: dona
-
-Total faturado por período (semana e mês) e quais serviços dão mais retorno. Como cada agendamento já carrega o preço do serviço, o cálculo sai dos dados que já existem.
-
----
-
-## Configurações
 **Camada 7** · quem usa: dona
 
-| Configuração | Valor inicial |
-|---|---|
-| Dias e horários de atendimento | ⚠️ a definir |
-| Bloqueio de férias e folgas | — |
-| Cadastro de serviços (nome, preço, duração) | ⚠️ a definir |
-| Aprovar cada agendamento | ligado |
-| Cliente pode cancelar sozinha | ligado |
-
-> ⚠️ **A confirmar:** a lista de serviços com preço e duração, e os dias e horários de atendimento. Sem esses dados o app pode ser construído com valores de exemplo, mas não usado de verdade.
+Total faturado por período (semana e mês) e quais serviços dão mais retorno. Como cada agendamento já carrega o preço praticado no momento da marcação, o cálculo sai dos dados que já existem.
 
 ---
+
+---
+
+## Refinamento
+**Camada 8**
+
+A última camada existe para acertar o que só o uso real revela — e para dar um lugar às coisas que incomodam sem serem urgentes, em vez de elas atrapalharem o que está sendo construído ou virarem dívida esquecida.
+
+O que já está estacionado aqui:
+
+| Item | Por quê |
+|---|---|
+| Cancelamento pela cliente | A tela do agendamento não oferece cancelar. Está coerente com a preferência desligada hoje, mas se a dona ligar, o botão precisa aparecer |
+| Seletor de modo como lista suspensa | Hoje são três botões lado a lado. Se em uso a barra ficar apertada no celular, vira lista |
+| Aviso de sessão expirada | Hoje a sessão vence em silêncio e a dona é jogada no login sem explicação |
+
+Itens entram aqui ao longo da construção, quando aparece algo que vale corrigir mas não vale interromper.
 
 ## Fora de escopo por enquanto
 
-- Cobrança de sinal ou qualquer pagamento pelo app ([DT-009](DECISOES.md#dt-009--sem-cobrança-de-sinal-na-primeira-versão))
-- Anamnese digital ([DT-010](DECISOES.md#dt-010--anamnese-fica-no-papel-fora-do-app))
-- Envio automático de WhatsApp ([DT-006](DECISOES.md#dt-006--whatsapp-com-envio-manual-não-automático))
-- Mais de uma profissional na interface — o banco já suporta ([DT-007](DECISOES.md#dt-007--banco-preparado-para-várias-profissionais-desde-o-início))
-- Publicação nas lojas de aplicativo ([DT-005](DECISOES.md#dt-005--clientes-acessam-por-link-no-navegador))
+- Cobrança de sinal ou qualquer pagamento pelo app ([DT-009](DECISOES.md))
+- Anamnese digital ([DT-010](DECISOES.md))
+- Envio automático de WhatsApp ([DT-006](DECISOES.md))
+- Mais de uma profissional na interface — o banco já suporta ([DT-007](DECISOES.md))
+- Publicação nas lojas de aplicativo ([DT-005](DECISOES.md))
 
 > ⚠️ **A confirmar:** "Yaya Kawaii Nails" é o nome definitivo que aparece para a cliente?
