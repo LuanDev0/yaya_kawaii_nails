@@ -8,6 +8,7 @@
     "scheme": "yayakawaiinails",
     "userInterfaceStyle": "automatic",
     "android": {
+      "package": "com.yayakawaiinails.app",
       "adaptiveIcon": {
         "backgroundColor": "#F4661F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
