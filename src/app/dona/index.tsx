@@ -6,7 +6,7 @@
 
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -18,6 +18,7 @@ import { listPending, listUpcoming, setStatus, type AgendaItem } from '@/lib/age
 import { type AppointmentStatus } from '@/lib/booking';
 import { formatPhone } from '@/lib/clients';
 import { formatPrice } from '@/lib/format';
+import { buildMessage, whatsAppUrl } from '@/lib/whatsapp';
 
 export default function AgendaScreen() {
   const { colors } = useTheme();
@@ -143,6 +144,10 @@ function AppointmentCard({
   const hora = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const passou = starts < new Date();
 
+  // Véspera: o texto muda de "está confirmado" para "passando pra lembrar".
+  const isTomorrow =
+    starts.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
+
   // Pendente espera aprovação; confirmado que já passou espera o fecho.
   const actions: { label: string; status: AppointmentStatus; primary?: boolean }[] =
     item.status === 'pendente'
@@ -199,6 +204,35 @@ function AppointmentCard({
       </View>
 
       <View style={styles.actions}>
+        {/* Só depois de confirmado: mandar mensagem sobre pedido que ainda
+            pode ser recusado seria prometer o que não foi decidido. */}
+        {item.status === 'confirmado' ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Mandar WhatsApp para ${item.client_name}`}
+            onPress={() =>
+              Linking.openURL(
+                whatsAppUrl(
+                  item.client_phone,
+                  buildMessage(isTomorrow ? 'lembrete' : 'confirmacao', {
+                    client_name: item.client_name,
+                    starts_at: item.starts_at,
+                    services: item.services,
+                    price: formatPrice(item.price_cents),
+                  }),
+                ),
+              )
+            }
+            style={({ pressed }) => [
+              styles.action,
+              { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+            ]}>
+            <AppText variant="label" color="textAccent">
+              WhatsApp
+            </AppText>
+          </Pressable>
+        ) : null}
+
         {actions.map((action) => (
           <Pressable
             key={action.status}

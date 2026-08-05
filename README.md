@@ -4,14 +4,16 @@ Sistema de agendamento para salão de manicure, pedicure e nail design — gest�
 
 ## Status
 
-**Camadas 1, 2 e 3 concluídas** (julho e agosto de 2026). O app já é utilizável no salão:
+**Camadas 1 a 5 concluídas** (julho e agosto de 2026). O app já é utilizável no salão:
 
 - A cliente abre o link, escolhe um ou vários serviços, vê os horários livres e agenda
 - A dona vê a agenda, aprova, cancela e conclui
 - A dona lança agendamento por quem combinou por WhatsApp, com opção de encaixar fora do expediente
+- Ficha e histórico de cada cliente
+- Mensagens de confirmação, lembrete e retorno montadas para envio pelo WhatsApp
 - Serviços, horários, folgas, promoções e preferências são configurados por ela
 
-Próximo passo: camada 4, ficha e histórico da cliente.
+Próximo passo: camada 6, fotos dos trabalhos.
 
 ## Como rodar
 
@@ -68,8 +70,8 @@ O app sai em camadas, cada uma utilizável sozinha:
 1. ~~Fundação — projeto, tema, banco de dados~~ ✅
 2. ~~Login e configuração~~ ✅
 3. ~~Agendar — cliente marca pelo link, dona vê e aprova~~ ✅ ← *já dá para usar no salão*
-4. Clientes — ficha, histórico
-5. WhatsApp — confirmação, lembrete e retorno
+4. ~~Clientes — ficha, histórico~~ ✅
+5. ~~WhatsApp — confirmação, lembrete e retorno~~ ✅
 6. Fotos — galeria e registro dos atendimentos
 7. Financeiro — faturamento
 8. Refinamento — acertar o que o uso real mostrar

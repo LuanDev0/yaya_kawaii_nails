@@ -88,8 +88,13 @@ Só `src/lib/` conversa com o banco. Telas não chamam o Supabase direto — ela
 | `format.ts` | Preço, duração e horário — formatar e ler de volta |
 | `calendar.ts` | Datas e a grade do mês |
 | `pricing.ts` | Desconto e preço final |
+| `whatsapp.ts` | Texto das mensagens e o endereço da conversa |
 
 `pricing.ts` e `calendar.ts` não tocam no banco de propósito: são as duas contas que dão errado em silêncio — centavo de arredondamento e virada de mês — e ficar fora da camada de dados permite testá-las sem subir o app.
+
+`whatsapp.ts` também não importa nada — nem o `react-native`, nem o formatador de moeda. Por isso recebe o preço já pronto e devolve o endereço da conversa em vez de abri-la: abrir é uma linha em quem chama, e em troca o texto e o número podem ser conferidos fora do app.
+
+O número é a parte que mais compensa testar. Um prefixo errado não dá erro: manda a mensagem para um estranho. E há uma armadilha — **DDD 55 é do Rio Grande do Sul**, então um celular gaúcho começa com 55 sem que 55 seja o código do país. Distinguir só pelo prefixo erraria com essas clientes.
 
 `pricing.ts` vai além e **não importa nada**, nem o calendário: a data de hoje entra por parâmetro. Uma função que consulta o relógio por dentro não pode ser exercitada em outra data, e "só quebra dia 31" é o tipo de defeito que ninguém reproduz. Quem chama passa `todayISO()`.
 
@@ -139,6 +144,7 @@ Dois públicos, dois tratamentos:
 | `/dona/configuracao` | Painel de configuração |
 | `/dona/clientes` | Lista de clientes |
 | `/dona/cliente/[id]` | Ficha e histórico de uma cliente |
+| `/dona/retorno` | Quem passou do prazo e ainda não remarcou |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
 | `/dona/horarios` | Padrão semanal de atendimento |

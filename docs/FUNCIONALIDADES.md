@@ -192,22 +192,30 @@ A anamnese **não** faz parte do app: o salão usa ficha física ([DT-010](DECIS
 ## Avisos por WhatsApp
 **Camada 5** · quem usa: dona
 
-O app não envia nada sozinho. Ele monta a mensagem e abre o WhatsApp para a dona apertar enviar.
+O app não envia nada sozinho. Ele monta a mensagem e abre a conversa; quem aperta enviar é a dona.
 
-Três momentos geram mensagem:
+Um botão **WhatsApp** aparece nos cartões da agenda, mas só nos **confirmados** — mandar mensagem sobre um pedido que ainda pode ser recusado seria prometer o que não foi decidido.
 
-| Momento | Conteúdo |
+O texto muda conforme o momento:
+
+| Quando | O que diz |
 |---|---|
-| Agendamento confirmado | Confirmação com serviço, data e horário |
-| Véspera do atendimento | Lembrete |
-| Cliente passou do prazo de retorno | Convite para remarcar |
+| Confirmado, ainda longe | Confirmação com serviços, dia, hora e valor |
+| Véspera | Lembrete, sem repetir o valor — ela já sabe |
+| Passou do prazo de retorno | Convite para remarcar, citando há quantos dias |
+
+A cliente é tratada pelo primeiro nome: "Oi, Maria" soa melhor que "Oi, Maria Aparecida da Silva".
 
 ---
 
 ## Lembrete de retorno
 **Camada 5** · quem usa: dona
 
-Alongamento pede manutenção periódica. O app mostra uma lista de clientes que passaram do prazo desde o último atendimento e ainda não remarcaram, com a mensagem de WhatsApp pronta para enviar.
+Alongamento pede manutenção periódica, e cliente que some não avisa que sumiu — ela simplesmente para de aparecer, e quando alguém percebe já faz meses.
+
+A lista cruza três coisas: o último atendimento **concluído** de cada cliente, o prazo configurado, e quem já tem horário marcado. O último filtro importa: sem ele a lista chamaria de volta quem vem semana que vem, e uma mensagem dessas faz a cliente achar que a dona não sabe da própria agenda.
+
+Ordenada por quem sumiu há mais tempo — é quem corre mais risco de não voltar.
 
 O prazo é definido pela dona na configuração.
 

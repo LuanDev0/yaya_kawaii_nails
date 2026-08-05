@@ -91,6 +91,28 @@ export async function listUpcoming(days = 30): Promise<AgendaItem[]> {
   return ((data ?? []) as unknown as Row[]).map(toItem);
 }
 
+export type ReturnCandidate = {
+  client_id: string;
+  name: string;
+  phone: string;
+  last_visit: string;
+  days_since: number;
+};
+
+/**
+ * Quem está na hora de voltar.
+ *
+ * Vem de função no banco porque a pergunta cruza o último atendimento de cada
+ * cliente, o prazo configurado e quem já tem horário marcado — três agrupamentos
+ * que o app resolveria com várias idas e voltas.
+ */
+export async function listDueForReturn(): Promise<ReturnCandidate[]> {
+  const { data, error } = await supabase.rpc('clients_due_for_return');
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ReturnCandidate[];
+}
+
 /**
  * Muda o estado do atendimento.
  *
