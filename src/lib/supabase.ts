@@ -13,17 +13,21 @@ import { Platform } from 'react-native';
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!url || !anonKey) {
-  // Erro explícito na hora de abrir o app é bem melhor que uma tela em branco
-  // com "undefined" no console meia hora depois.
-  throw new Error(
-    'Faltam as variáveis do Supabase. Copie .env.example para .env e preencha ' +
-      'EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY. ' +
-      'Depois reinicie o servidor: as variáveis só são lidas na inicialização.',
-  );
-}
+/**
+ * Se a configuração chegou.
+ *
+ * Antes isto era um `throw` aqui em cima. Funcionava no desenvolvimento, onde
+ * o erro aparece na tela — e era péssimo no aplicativo instalado, onde não há
+ * tela de erro: o Android só fechava o app, sem a pessoa ver mensagem nenhuma
+ * nem ter como descobrir o motivo.
+ *
+ * Agora o app abre e explica. Quem checa é o layout raiz.
+ */
+export const isSupabaseConfigured = Boolean(url && anonKey);
 
-export const supabase = createClient(url, anonKey, {
+// Endereço inválido de propósito quando falta configuração: o cliente é criado
+// para nada quebrar na importação, mas nenhuma chamada vai a lugar nenhum.
+export const supabase = createClient(url ?? 'https://sem-configuracao.invalid', anonKey ?? 'sem-chave', {
   auth: {
     // No navegador o Supabase já usa o localStorage sozinho; no celular
     // precisa de um armazenamento explícito, senão a sessão morre ao fechar.
