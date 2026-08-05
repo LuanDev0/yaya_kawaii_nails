@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 
 export type AgendaItem = {
   id: string;
+  client_id: string;
   starts_at: string;
   ends_at: string;
   status: AppointmentStatus;
@@ -25,6 +26,7 @@ export type AgendaItem = {
 
 type Row = {
   id: string;
+  client_id: string;
   starts_at: string;
   ends_at: string;
   status: AppointmentStatus;
@@ -38,6 +40,7 @@ type Row = {
 function toItem(row: Row): AgendaItem {
   return {
     id: row.id,
+    client_id: row.client_id,
     starts_at: row.starts_at,
     ends_at: row.ends_at,
     status: row.status,
@@ -53,7 +56,7 @@ function toItem(row: Row): AgendaItem {
 }
 
 const SELECT =
-  'id, starts_at, ends_at, status, price_cents, discount_cents, notes, clients(name, phone), appointment_services(services(name))';
+  'id, client_id, starts_at, ends_at, status, price_cents, discount_cents, notes, clients(name, phone), appointment_services(services(name))';
 
 /**
  * Tudo que ainda espera uma decisão dela.

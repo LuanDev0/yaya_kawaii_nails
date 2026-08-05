@@ -4,7 +4,7 @@
  * Duas listas: o que espera uma decisão dela, e o que vem pela frente.
  */
 
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -136,6 +136,7 @@ function AppointmentCard({
   highlight?: boolean;
 }) {
   const { colors } = useTheme();
+  const router = useRouter();
 
   const starts = new Date(item.starts_at);
   const ends = new Date(item.ends_at);
@@ -160,12 +161,18 @@ function AppointmentCard({
     <Card
       style={[styles.card, highlight ? { borderColor: colors.primary, borderWidth: 2 } : null]}>
       <View style={styles.cardHeader}>
-        <View style={styles.grow}>
-          <AppText variant="bodyBold">{item.client_name}</AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ficha de ${item.client_name}`}
+          onPress={() => router.push(`/dona/cliente/${item.client_id}`)}
+          style={({ pressed }) => [styles.grow, pressed && { opacity: 0.6 }]}>
+          <AppText variant="bodyBold">
+            {item.client_name} <AppText variant="bodyBold" color="textAccent">›</AppText>
+          </AppText>
           <AppText variant="support" color="textSecondary">
             {formatPhone(item.client_phone)}
           </AppText>
-        </View>
+        </Pressable>
 
         {item.status === 'pendente' ? (
           <View style={[styles.badge, { backgroundColor: colors.blush }]}>

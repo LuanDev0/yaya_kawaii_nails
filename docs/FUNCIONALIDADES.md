@@ -169,13 +169,21 @@ A dona pode cancelar qualquer agendamento.
 ## Ficha e histórico da cliente
 **Camada 4** · quem usa: dona
 
-Cada cliente tem uma ficha com:
+As clientes entram sozinhas na lista quando agendam pela primeira vez — ou quando a dona lança um agendamento por elas. Não há cadastro manual, porque não haveria como usar uma ficha sem agendamento.
+
+Cada uma tem:
 
 - Nome e telefone
-- Observações livres
-- Preferências de unha (formato, tamanho, cores)
 - Aniversário
-- Histórico de atendimentos, com data, serviço e valor
+- Preferências de unha (formato, tamanho, cores)
+- Observações livres
+- Histórico de atendimentos, com data, serviços, valor e situação
+
+O histórico traz **também os cancelados**. Saber que alguém desmarcou três vezes é informação; escondê-los deixaria a lista contando meia verdade.
+
+Acima da ficha aparece quanto ela já gastou, contando só os concluídos — agendamento marcado ainda não é dinheiro.
+
+Chega-se à ficha por dois caminhos: pela lista em Configurar → Clientes, ou tocando no nome dela num cartão da agenda.
 
 A anamnese **não** faz parte do app: o salão usa ficha física ([DT-010](DECISOES.md)). Como consequência, o app não guarda nenhum dado de saúde — nem um campo curto de alergias.
 
@@ -223,6 +231,23 @@ A cliente não envia foto de referência ao agendar.
 Total faturado por período (semana e mês) e quais serviços dão mais retorno. Como cada agendamento já carrega o preço praticado no momento da marcação, o cálculo sai dos dados que já existem.
 
 ---
+
+---
+
+## Refinamento
+**Camada 8**
+
+A última camada existe para acertar o que só o uso real revela — e para dar um lugar às coisas que incomodam sem serem urgentes, em vez de elas atrapalharem o que está sendo construído ou virarem dívida esquecida.
+
+O que já está estacionado aqui:
+
+| Item | Por quê |
+|---|---|
+| Cancelamento pela cliente | A tela do agendamento não oferece cancelar. Está coerente com a preferência desligada hoje, mas se a dona ligar, o botão precisa aparecer |
+| Seletor de modo como lista suspensa | Hoje são três botões lado a lado. Se em uso a barra ficar apertada no celular, vira lista |
+| Aviso de sessão expirada | Hoje a sessão vence em silêncio e a dona é jogada no login sem explicação |
+
+Itens entram aqui ao longo da construção, quando aparece algo que vale corrigir mas não vale interromper.
 
 ## Fora de escopo por enquanto
 

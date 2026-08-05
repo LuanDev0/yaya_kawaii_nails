@@ -72,6 +72,7 @@ O app sai em camadas, cada uma utilizável sozinha:
 5. WhatsApp — confirmação, lembrete e retorno
 6. Fotos — galeria e registro dos atendimentos
 7. Financeiro — faturamento
+8. Refinamento — acertar o que o uso real mostrar
 
 A configuração era a última camada e passou para a segunda: sem ela, a lógica de horários livres seria construída sobre serviços e horários inventados ([DT-015](docs/DECISOES.md)).
 

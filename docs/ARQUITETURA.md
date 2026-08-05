@@ -137,6 +137,8 @@ Dois públicos, dois tratamentos:
 | `/dona` | **Agenda** — a tela do dia a dia |
 | `/dona/agendar` | Lançamento de agendamento pela dona |
 | `/dona/configuracao` | Painel de configuração |
+| `/dona/clientes` | Lista de clientes |
+| `/dona/cliente/[id]` | Ficha e histórico de uma cliente |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
 | `/dona/horarios` | Padrão semanal de atendimento |

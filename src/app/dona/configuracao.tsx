@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 
 const LINKS = [
+  { href: '/dona/clientes', title: 'Clientes', hint: 'Ficha, preferências e histórico' },
   { href: '/dona/servicos', title: 'Serviços', hint: 'Nome, preço, duração e promoção' },
   { href: '/dona/horarios', title: 'Horários', hint: 'Padrão semanal de atendimento' },
   { href: '/dona/disponibilidade', title: 'Disponibilidade', hint: 'Folgas, férias e dias fora do padrão' },
