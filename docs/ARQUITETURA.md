@@ -1,6 +1,6 @@
 # Arquitetura
 
-Estado em julho de 2026: existe a camada 1 — projeto, identidade visual, componentes base e banco de dados. Ainda não há telas de agendamento.
+Estado em agosto de 2026: camadas 1 a 7. O app agenda, gerencia clientes, monta as mensagens de WhatsApp, guarda fotos e mostra o faturamento. Falta o refinamento (camada 8).
 
 ## Visão geral
 
@@ -65,6 +65,13 @@ Telas nunca declaram `fontFamily`. Use `<AppText variant="…">`, que já aplica
 | `Card` | Superfície com borda e canto arredondado |
 | `TextField` | Campo de texto com rótulo e erro |
 | `Toggle` | Liga/desliga na paleta da marca |
+| `DragScroll` | Faixa horizontal que arrasta também com o mouse |
+| `CaptionField` | Texto curto preso a uma foto — legenda ou observação |
+| `PaymentPicker` | "Pagou como?" — Pix, dinheiro, cartão |
+
+`DragScroll` existe porque no celular o toque já arrasta, mas no navegador não: rolagem horizontal só responde a barra ou à roda com Shift. Quem está no computador tenta arrastar, não consegue, e conclui que a faixa travou. O cursor de mãozinha é o que avisa que dá.
+
+`CaptionField` grava por botão, e não ao sair do campo. O `TextField` espalha as props recebidas depois de definir o próprio `onBlur`, então um `onBlur` vindo de fora o substituiria e o realce de foco pararia de funcionar. O botão só aparece quando há algo a gravar — botão que não faz nada vira ruído.
 
 `Toggle` existe porque o `Switch` do React Native ignora as cores informadas em algumas plataformas e insiste no verde do sistema, destoando de um app em laranja e lavanda. Ele também define `aria-checked` explicitamente: o React Native Web não traduz `accessibilityState.checked` para o atributo do navegador, e sem isso um leitor de tela anuncia o controle sem dizer se está ligado.
 
@@ -88,10 +95,28 @@ Só `src/lib/` conversa com o banco. Telas não chamam o Supabase direto — ela
 | `format.ts` | Preço, duração e horário — formatar e ler de volta |
 | `calendar.ts` | Datas e a grade do mês |
 | `pricing.ts` | Desconto e preço final |
+| `whatsapp.ts` | Texto das mensagens e o endereço da conversa |
+| `photos.ts` | Galeria e fotos de atendimento — os dois depósitos |
+| `payment.ts` | As formas de pagamento e seus rótulos |
+| `finance.ts` | Faturamento: busca o período e soma |
 
 `pricing.ts` e `calendar.ts` não tocam no banco de propósito: são as duas contas que dão errado em silêncio — centavo de arredondamento e virada de mês — e ficar fora da camada de dados permite testá-las sem subir o app.
 
+`whatsapp.ts` também não importa nada — nem o `react-native`, nem o formatador de moeda. Por isso recebe o preço já pronto e devolve o endereço da conversa em vez de abri-la: abrir é uma linha em quem chama, e em troca o texto e o número podem ser conferidos fora do app.
+
+O número é a parte que mais compensa testar. Um prefixo errado não dá erro: manda a mensagem para um estranho. E há uma armadilha — **DDD 55 é do Rio Grande do Sul**, então um celular gaúcho começa com 55 sem que 55 seja o código do país. Distinguir só pelo prefixo erraria com essas clientes.
+
 `pricing.ts` vai além e **não importa nada**, nem o calendário: a data de hoje entra por parâmetro. Uma função que consulta o relógio por dentro não pode ser exercitada em outra data, e "só quebra dia 31" é o tipo de defeito que ninguém reproduz. Quem chama passa `todayISO()`.
+
+### A borda do dia é onde o faturamento erra em silêncio
+
+`starts_at` é um instante; o dia da dona começa à meia-noite **do fuso dela**, não do servidor. Filtrar com o texto `"2026-08-06T00:00:00"` faz o Postgres ler aquilo em UTC, e no Brasil isso empurra o atendimento das 21h para o dia seguinte: some de um dia e reaparece no outro.
+
+Por isso `calendar.ts` expõe `dayStartInstant` e `dayAfterInstant`, que constroem o instante a partir da data local, e `finance.ts` filtra com eles — início inclusivo, fim exclusivo, sem `23:59:59`.
+
+O erro nunca aparece no total do mês, só no total do dia, e só para quem atende à noite. É o tipo de defeito que se atribui a "o app está errado" sem nunca se reproduzir. Está coberto por teste.
+
+`Period`, `periodRange` e `previousPeriodRange` também moram em `calendar.ts`, e não junto das consultas, pelo mesmo motivo de `pricing.ts`: é conta de calendário — virada de mês, virada de ano, semana que começa no domingo — e ficar fora da camada de dados permite conferir sem subir o app.
 
 ### Formato de data na interface
 
@@ -139,6 +164,10 @@ Dois públicos, dois tratamentos:
 | `/dona/configuracao` | Painel de configuração |
 | `/dona/clientes` | Lista de clientes |
 | `/dona/cliente/[id]` | Ficha e histórico de uma cliente |
+| `/dona/retorno` | Quem passou do prazo e ainda não remarcou |
+| `/dona/galeria` | Vitrine de trabalhos |
+| `/dona/fotos/[id]` | Fotos de um atendimento. `id` é o do agendamento |
+| `/dona/financeiro` | Faturamento por dia, semana e mês |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
 | `/dona/horarios` | Padrão semanal de atendimento |
@@ -146,6 +175,12 @@ Dois públicos, dois tratamentos:
 | `/dona/preferencias` | Aprovação, cancelamento, prazo de retorno |
 
 Tudo sob `/dona` passa pelo guardião de `src/app/dona/_layout.tsx`.
+
+**Rota nova não existe para o TypeScript até o servidor reiniciar.** Os tipos de rota são gerados em `.expo/types/`, e criar o arquivo da tela não basta para `npx tsc --noEmit` aceitar o endereço. Enquanto isso, empurre pela forma de objeto, que sempre funciona:
+
+```tsx
+router.push({ pathname: '/dona/fotos/[id]', params: { id } });
+```
 
 ### A tela da cliente é uma só
 
@@ -161,4 +196,4 @@ Trocar de serviço limpa o horário escolhido de propósito: a duração muda, e
 
 ## O que ainda não existe
 
-Da camada 4 em diante: ficha e histórico da cliente, mensagens de WhatsApp, lembrete de retorno, fotos e faturamento. Ver o [README](../README.md).
+Refinamento (camada 8): acertar o que o uso real mostrar. Ver o [README](../README.md).

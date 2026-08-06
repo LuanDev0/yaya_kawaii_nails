@@ -6,6 +6,7 @@
  * contexto do que já foi escolhido — e voltar para corrigir vira aventura.
  */
 
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -14,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { DragScroll } from '@/components/drag-scroll';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -28,6 +30,7 @@ import {
 import { todayISO, type ISODate } from '@/lib/calendar';
 import { WEEKDAYS, formatDuration, formatPrice } from '@/lib/format';
 import { finalPriceCents, hasDiscount } from '@/lib/pricing';
+import { listGalleryPhotos, type GalleryPhoto } from '@/lib/photos';
 import { listActiveServices, type Service } from '@/lib/services';
 
 export default function BookingScreen() {
@@ -46,6 +49,8 @@ export default function BookingScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [total, setTotal] = useState({ duration_minutes: 0, buffer_minutes: 0 });
+  const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
+  const [expanded, setExpanded] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,6 +63,12 @@ export default function BookingScreen() {
 
         setServices(list);
         setOpenDates(await listOpenDates(rules.booking_window_days));
+
+        // A vitrine é enfeite: se falhar, a cliente ainda precisa conseguir
+        // agendar. Por isso vem depois e não derruba a tela.
+        listGalleryPhotos()
+          .then((photos) => active && setGallery(photos))
+          .catch(() => {});
       })
       .catch((cause: Error) => active && setError(cause.message));
 
@@ -152,6 +163,29 @@ export default function BookingScreen() {
           </Card>
         ) : null}
 
+        {gallery.length > 0 ? (
+          <DragScroll style={styles.gallery}>
+            <View style={styles.galleryRow}>
+              {gallery.map((photo) => (
+                <View key={photo.id} style={styles.galleryItem}>
+                  <Image
+                    source={{ uri: photo.url }}
+                    style={styles.galleryPhoto}
+                    contentFit="cover"
+                    transition={200}
+                    accessibilityLabel={photo.caption ?? 'Trabalho da Yaya'}
+                  />
+                  {photo.caption ? (
+                    <AppText variant="support" color="textSecondary" numberOfLines={2}>
+                      {photo.caption}
+                    </AppText>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          </DragScroll>
+        ) : null}
+
         <Step number={1} title="O que você quer fazer" />
 
         {services === null ? (
@@ -160,57 +194,77 @@ export default function BookingScreen() {
           <Card>
             {services.map((service, index) => {
               const selected = chosen.includes(service.id);
+              const open = expanded.includes(service.id);
 
               return (
-                <Pressable
+                <View
                   key={service.id}
-                  accessibilityRole="checkbox"
-                  aria-checked={selected}
-                  accessibilityLabel={service.name}
-                  onPress={() => toggleService(service.id)}
-                  style={({ pressed }) => [
-                    styles.serviceRow,
-                    index > 0 && { borderTopWidth: 1, borderTopColor: colors.border },
-                    pressed && { opacity: 0.6 },
-                  ]}>
-                  <View
-                    style={[
-                      styles.check,
-                      {
-                        borderColor: selected ? colors.primary : colors.border,
-                        backgroundColor: selected ? colors.primary : 'transparent',
-                      },
-                    ]}>
-                    {selected ? (
-                      <AppText variant="label" color="onPrimary">
-                        ✓
-                      </AppText>
-                    ) : null}
-                  </View>
+                  style={[index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    aria-checked={selected}
+                    accessibilityLabel={service.name}
+                    onPress={() => toggleService(service.id)}
+                    style={({ pressed }) => [styles.serviceRow, pressed && { opacity: 0.6 }]}>
+                    <View
+                      style={[
+                        styles.check,
+                        {
+                          borderColor: selected ? colors.primary : colors.border,
+                          backgroundColor: selected ? colors.primary : 'transparent',
+                        },
+                      ]}>
+                      {selected ? (
+                        <AppText variant="label" color="onPrimary">
+                          ✓
+                        </AppText>
+                      ) : null}
+                    </View>
 
-                  <View style={styles.serviceInfo}>
-                    <AppText variant="bodyBold">{service.name}</AppText>
-                    {service.description ? (
+                    <View style={styles.serviceInfo}>
+                      <AppText variant="bodyBold">{service.name}</AppText>
                       <AppText variant="support" color="textSecondary">
-                        {service.description}
+                        {formatDuration(service.duration_minutes)}
                       </AppText>
-                    ) : null}
-                    <AppText variant="support" color="textSecondary">
-                      {formatDuration(service.duration_minutes)}
-                    </AppText>
-                  </View>
+                    </View>
 
-                  <View style={styles.priceColumn}>
-                    {hasDiscount(service, today) ? (
-                      <AppText variant="support" color="textSecondary" style={styles.struck}>
-                        {formatPrice(service.price_cents)}
+                    <View style={styles.priceColumn}>
+                      {hasDiscount(service, today) ? (
+                        <AppText variant="support" color="textSecondary" style={styles.struck}>
+                          {formatPrice(service.price_cents)}
+                        </AppText>
+                      ) : null}
+                      <AppText variant="bodyBold" color="textAccent">
+                        {formatPrice(finalPriceCents(service, today))}
                       </AppText>
-                    ) : null}
-                    <AppText variant="bodyBold" color="textAccent">
-                      {formatPrice(finalPriceCents(service, today))}
+                    </View>
+                  </Pressable>
+
+                  {/* Área de toque própria: tocar para ler não pode marcar o
+                      serviço sem querer. */}
+                  {service.description ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: open }}
+                      accessibilityLabel={`${open ? 'Ocultar' : 'Ver'} o que está incluso em ${service.name}`}
+                      onPress={() =>
+                        setExpanded((current) =>
+                          open ? current.filter((x) => x !== service.id) : [...current, service.id],
+                        )
+                      }
+                      style={({ pressed }) => [styles.detailsToggle, pressed && { opacity: 0.6 }]}>
+                      <AppText variant="label" color="textAccent">
+                        {open ? 'Ocultar detalhes ⌄' : 'Ver o que está incluso ›'}
+                      </AppText>
+                    </Pressable>
+                  ) : null}
+
+                  {open && service.description ? (
+                    <AppText variant="support" color="textSecondary" style={styles.description}>
+                      {service.description}
                     </AppText>
-                  </View>
-                </Pressable>
+                  ) : null}
+                </View>
               );
             })}
           </Card>
@@ -393,6 +447,10 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.three },
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   subtitle: { marginTop: Spacing.one },
+  gallery: { marginTop: Spacing.four },
+  galleryRow: { flexDirection: 'row', gap: Spacing.two },
+  galleryItem: { width: 150, gap: Spacing.one },
+  galleryPhoto: { width: 150, height: 150, borderRadius: Radius.medium },
   errorCard: { marginTop: Spacing.three },
   step: {
     flexDirection: 'row',
@@ -423,6 +481,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   serviceInfo: { flex: 1 },
+  detailsToggle: { paddingBottom: Spacing.three, paddingLeft: 36 },
+  description: { paddingBottom: Spacing.three, paddingLeft: 36 },
   priceColumn: { alignItems: 'flex-end' },
   struck: { textDecorationLine: 'line-through' },
   summary: { marginTop: Spacing.three },

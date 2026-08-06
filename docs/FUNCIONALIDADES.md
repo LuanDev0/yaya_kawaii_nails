@@ -97,7 +97,7 @@ graph LR
 
 ### Passo a passo
 
-1. A cliente abre o link e vê a lista de serviços, cada um com preço e duração
+1. A cliente abre o link e vê a lista de serviços, cada um com preço e duração. A descrição fica recolhida atrás de "ver o que está incluso" — aberta, uma boa descrição empurra os outros serviços para fora da tela. O toque de abrir tem área própria, senão ler marcaria o serviço sem querer
 2. Escolhe um serviço
 3. Escolhe a data num calendário. Dias sem vaga aparecem desabilitados
 4. Escolhe entre os horários disponíveis daquele dia
@@ -192,22 +192,30 @@ A anamnese **não** faz parte do app: o salão usa ficha física ([DT-010](DECIS
 ## Avisos por WhatsApp
 **Camada 5** · quem usa: dona
 
-O app não envia nada sozinho. Ele monta a mensagem e abre o WhatsApp para a dona apertar enviar.
+O app não envia nada sozinho. Ele monta a mensagem e abre a conversa; quem aperta enviar é a dona.
 
-Três momentos geram mensagem:
+Um botão **WhatsApp** aparece nos cartões da agenda, mas só nos **confirmados** — mandar mensagem sobre um pedido que ainda pode ser recusado seria prometer o que não foi decidido.
 
-| Momento | Conteúdo |
+O texto muda conforme o momento:
+
+| Quando | O que diz |
 |---|---|
-| Agendamento confirmado | Confirmação com serviço, data e horário |
-| Véspera do atendimento | Lembrete |
-| Cliente passou do prazo de retorno | Convite para remarcar |
+| Confirmado, ainda longe | Confirmação com serviços, dia, hora e valor |
+| Véspera | Lembrete, sem repetir o valor — ela já sabe |
+| Passou do prazo de retorno | Convite para remarcar, citando há quantos dias |
+
+A cliente é tratada pelo primeiro nome: "Oi, Maria" soa melhor que "Oi, Maria Aparecida da Silva".
 
 ---
 
 ## Lembrete de retorno
 **Camada 5** · quem usa: dona
 
-Alongamento pede manutenção periódica. O app mostra uma lista de clientes que passaram do prazo desde o último atendimento e ainda não remarcaram, com a mensagem de WhatsApp pronta para enviar.
+Alongamento pede manutenção periódica, e cliente que some não avisa que sumiu — ela simplesmente para de aparecer, e quando alguém percebe já faz meses.
+
+A lista cruza três coisas: o último atendimento **concluído** de cada cliente, o prazo configurado, e quem já tem horário marcado. O último filtro importa: sem ele a lista chamaria de volta quem vem semana que vem, e uma mensagem dessas faz a cliente achar que a dona não sabe da própria agenda.
+
+Ordenada por quem sumiu há mais tempo — é quem corre mais risco de não voltar.
 
 O prazo é definido pela dona na configuração.
 
@@ -216,19 +224,66 @@ O prazo é definido pela dona na configuração.
 ## Fotos dos trabalhos
 **Camada 6**
 
-Dois usos distintos:
+Dois usos distintos, e os dois existem no app:
 
 - **Galeria** — vitrine pública, visível para a cliente enquanto escolhe o serviço, para inspirar
 - **Registro do atendimento** — foto anexada ao histórico da cliente, para a dona lembrar do que foi feito e acompanhar a saúde da unha
 
 A cliente não envia foto de referência ao agendar.
 
+### Galeria
+
+Em `/dona/galeria` a dona põe, tira e reordena as fotos, e escreve uma legenda em cada uma. A ordem é dela porque a primeira foto é o cartão de visitas do salão.
+
+A vitrine aparece no alto da tela da cliente, numa faixa que corre de lado. Se ela não carregar, a tela de agendamento continua funcionando: vitrine é enfeite, agendar é o serviço.
+
+### Fotos de um atendimento
+
+Cada atendimento tem sua própria página de fotos, em `/dona/fotos/[id]`. Chega-se lá por dois caminhos:
+
+- Pelo card da agenda, no botão **Fotos** — que só aparece depois da hora marcada, e enquanto o atendimento não foi concluído
+- Pela ficha da cliente, tocando em qualquer atendimento do histórico
+
+O segundo caminho é o que sobra no dia seguinte: concluir tira o atendimento da agenda, e a ficha passa a ser o único lugar onde ele está.
+
+São fotos soltas, quantas ela quiser, cada uma com um campo de observação opcional. Não há "antes" e "depois" obrigatórios: nem todo atendimento tem um antes que valha registrar, e um espaço vazio esperando foto atrapalha mais do que ajuda.
+
+A observação é escrita depois de enviar a foto, não antes. Fotografar é o que tem hora para acontecer — a cliente está ali, a unha está pronta. Escrever pode esperar.
+
+**Estas fotos não vão para a vitrine.** Ficam num depósito privado, e cada uma só abre por um endereço temporário que a dona gera ao entrar na tela. A cliente que faz manutenção não escolheu aparecer em lugar nenhum.
+
 ---
 
 ## Faturamento
 **Camada 7** · quem usa: dona
 
-Total faturado por período (semana e mês) e quais serviços dão mais retorno. Como cada agendamento já carrega o preço praticado no momento da marcação, o cálculo sai dos dados que já existem.
+Fica em `/dona/financeiro`, pelo painel de configuração.
+
+Um período por vez — **hoje, semana ou mês** — e a tela inteira recalcula junto. Ao lado do total vem sempre o período anterior de mesmo tamanho: ontem, a semana passada, o mês passado. Número sozinho não diz nada; é a comparação que transforma "R$ 800" em "R$ 800, subiu R$ 120".
+
+O que a tela mostra, no período escolhido:
+
+| Bloco | Responde |
+|---|---|
+| Total | Quanto entrou, quantos atendimentos, e quanto disso foi promoção |
+| Como entrou | Pix, dinheiro, cartão — e o que ficou sem anotação |
+| Quais serviços renderam mais | Quanto cada serviço faturou e quantas vezes foi feito |
+| Quem mais gastou | As clientes que mais deixaram dinheiro no período |
+| Falta anotar como pagou | Os atendimentos sem forma de pagamento, para completar ali mesmo |
+
+### Só conta o que foi concluído
+
+Atendimento confirmado cuja hora já passou **não** entra. Pode ter sido furo que ela ainda não cancelou, e faturamento que conta dinheiro que não entrou é pior que faturamento nenhum. O número só sobe quando ela aperta **Concluir** na agenda.
+
+### A forma de pagamento é perguntada na conclusão
+
+Apertar **Concluir** não fecha direto: o card pergunta **"pagou como?"** e oferece Pix, Dinheiro e Cartão — mais **"anoto depois"**, que conclui sem responder, e **"voltar sem concluir"**, para quem tocou sem querer.
+
+Poder pular é proposital. Se a forma fosse obrigatória, o caminho mais rápido num dia corrido seria não concluir — e o faturamento pararia de existir para proteger um campo secundário. O que ficou em branco aparece no fim da tela de faturamento, com os três botões ali, para ser completado quando der.
+
+### Por que dividir por serviço não é estimativa
+
+Cada serviço de um atendimento tem o próprio preço congelado no momento da marcação, e a soma deles é o total cobrado. Então num atendimento de manicure + pedicure o app sabe exatamente quanto foi de cada um — não rateia nem repete o valor cheio nos dois.
 
 ---
 

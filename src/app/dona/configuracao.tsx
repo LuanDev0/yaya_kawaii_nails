@@ -13,7 +13,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 
 const LINKS = [
+  { href: '/dona/financeiro', title: 'Faturamento', hint: 'Quanto entrou no dia, na semana e no mês' },
   { href: '/dona/clientes', title: 'Clientes', hint: 'Ficha, preferências e histórico' },
+  { href: '/dona/retorno', title: 'Hora de voltar', hint: 'Quem sumiu e ainda não remarcou' },
+  { href: '/dona/galeria', title: 'Galeria', hint: 'A vitrine que a cliente vê' },
   { href: '/dona/servicos', title: 'Serviços', hint: 'Nome, preço, duração e promoção' },
   { href: '/dona/horarios', title: 'Horários', hint: 'Padrão semanal de atendimento' },
   { href: '/dona/disponibilidade', title: 'Disponibilidade', hint: 'Folgas, férias e dias fora do padrão' },

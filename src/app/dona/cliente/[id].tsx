@@ -5,9 +5,9 @@
  * preferências são anotações de atendimento, não prontuário.
  */
 
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -38,6 +38,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default function ClientScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [client, setClient] = useState<ClientDetails | null>(null);
@@ -205,6 +206,12 @@ export default function ClientScreen() {
           HISTÓRICO
         </AppText>
 
+        {visits.length > 0 ? (
+          <AppText variant="support" color="textSecondary" style={styles.hint}>
+            Toque num atendimento para ver ou guardar as fotos dele.
+          </AppText>
+        ) : null}
+
         {visits.length === 0 ? (
           <Card>
             <AppText variant="body" color="textSecondary">
@@ -218,11 +225,19 @@ export default function ClientScreen() {
               const cancelled = visit.status === 'cancelado';
 
               return (
-                <View
+                // Cancelado não abre: não houve atendimento, não há foto.
+                <Pressable
                   key={visit.id}
-                  style={[
+                  accessibilityRole="button"
+                  accessibilityLabel={`Fotos do atendimento de ${when.toLocaleDateString('pt-BR')}`}
+                  disabled={cancelled}
+                  onPress={() =>
+                    router.push({ pathname: '/dona/fotos/[id]', params: { id: visit.id } })
+                  }
+                  style={({ pressed }) => [
                     styles.visit,
                     index > 0 && { borderTopWidth: 1, borderTopColor: colors.border },
+                    pressed && { opacity: 0.6 },
                   ]}>
                   <View style={styles.grow}>
                     <AppText
@@ -241,8 +256,9 @@ export default function ClientScreen() {
                     variant="bodyBold"
                     color={cancelled ? 'textSecondary' : 'textAccent'}>
                     {formatPrice(visit.price_cents)}
+                    {cancelled ? '' : '  ›'}
                   </AppText>
-                </View>
+                </Pressable>
               );
             })}
           </Card>
@@ -259,6 +275,7 @@ const styles = StyleSheet.create({
   messageCard: { marginBottom: Spacing.three },
   summary: { marginBottom: Spacing.three },
   section: { marginTop: Spacing.five, marginBottom: Spacing.two, letterSpacing: 1 },
+  hint: { marginBottom: Spacing.two },
   multiline: { minHeight: 88, textAlignVertical: 'top', paddingTop: Spacing.three },
   visit: {
     flexDirection: 'row',

@@ -8,6 +8,7 @@
 
 import { type AppointmentStatus } from '@/lib/booking';
 import { addDaysISO, todayISO } from '@/lib/calendar';
+import { type PaymentMethod } from '@/lib/payment';
 import { supabase } from '@/lib/supabase';
 
 export type AgendaItem = {
@@ -91,6 +92,40 @@ export async function listUpcoming(days = 30): Promise<AgendaItem[]> {
   return ((data ?? []) as unknown as Row[]).map(toItem);
 }
 
+/** Um atendimento só, para telas que chegam pelo endereço dele. */
+export async function getAppointment(id: string): Promise<AgendaItem | null> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(SELECT)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data ? toItem(data as unknown as Row) : null;
+}
+
+export type ReturnCandidate = {
+  client_id: string;
+  name: string;
+  phone: string;
+  last_visit: string;
+  days_since: number;
+};
+
+/**
+ * Quem está na hora de voltar.
+ *
+ * Vem de função no banco porque a pergunta cruza o último atendimento de cada
+ * cliente, o prazo configurado e quem já tem horário marcado — três agrupamentos
+ * que o app resolveria com várias idas e voltas.
+ */
+export async function listDueForReturn(): Promise<ReturnCandidate[]> {
+  const { data, error } = await supabase.rpc('clients_due_for_return');
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ReturnCandidate[];
+}
+
 /**
  * Muda o estado do atendimento.
  *
@@ -99,5 +134,25 @@ export async function listUpcoming(days = 30): Promise<AgendaItem[]> {
  */
 export async function setStatus(id: string, status: AppointmentStatus): Promise<void> {
   const { error } = await supabase.from('appointments').update({ status }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Fecha o atendimento, anotando como foi pago.
+ *
+ * A forma pode vir nula: exigir que ela lembre para conseguir concluir faria
+ * do "não concluir" o caminho mais rápido, e aí o faturamento inteiro pararia
+ * de existir para proteger um campo secundário. O que ficou sem anotação
+ * aparece na tela de faturamento para ser completado depois.
+ */
+export async function concludeAppointment(
+  id: string,
+  payment: PaymentMethod | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('appointments')
+    .update({ status: 'concluido', payment_method: payment })
+    .eq('id', id);
+
   if (error) throw new Error(error.message);
 }

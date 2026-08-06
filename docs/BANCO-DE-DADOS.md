@@ -69,7 +69,10 @@ Não há campo de dados de saúde. A anamnese fica em papel ([DT-010](DECISOES.m
 | `status` | text | `pendente`, `confirmado`, `cancelado`, `concluido` |
 | `price_cents` | integer | **Cópia** do valor cobrado no momento da marcação |
 | `discount_cents` | integer | Quanto de promoção foi dado. Zero quando não houve |
+| `payment_method` | text | `pix`, `dinheiro`, `cartao` — ou nulo, ver abaixo |
 | `notes` | text | |
+
+**`payment_method` aceita nulo de propósito.** Nulo quer dizer "o atendimento aconteceu e ela não anotou como foi pago", que é diferente de erro. Se o campo fosse obrigatório, o jeito mais rápido de fechar o dia passaria a ser não concluir nada — e aí o faturamento inteiro deixaria de existir para proteger um campo secundário. A tela de faturamento lista os nulos à parte, para completar depois.
 
 ### `schedule_exceptions`
 
@@ -239,6 +242,19 @@ Isso elimina a classe de bug em que a tela mostra um horário que o gravador rec
 Sem senha (DT-004), o código do agendamento é a prova de posse: um identificador aleatório, guardado no navegador que o criou. Quem não tem o código não descobre nada.
 
 **Não existe busca por telefone**, de propósito: ela deixaria qualquer pessoa que saiba o número de outra ver o histórico dela.
+
+## Fotos: dois depósitos, não um
+
+| Depósito | Acesso | Para que |
+|---|---|---|
+| `galeria` | **Público** | Vitrine, feita para ser vista |
+| `atendimentos` | **Privado**, com link temporário | A unha da cliente no histórico dela |
+
+A separação existe por consentimento, não por capricho técnico. A cliente que faz uma manutenção não escolheu aparecer em vitrine nenhuma — e depósito público no Supabase serve qualquer endereço que alguém descubra, sem checar quem pediu.
+
+As tabelas `gallery_photos` e `appointment_photos` guardam o caminho do arquivo, a legenda e a ordem. `appointment_photos` não tem política para a chave pública: nem a existência da foto é assunto da cliente.
+
+Apagar o registro apaga o arquivo junto — foto órfã no depósito é conta que cresce sem ninguém ver.
 
 ## Regras de acesso (RLS)
 

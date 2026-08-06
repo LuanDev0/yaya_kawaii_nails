@@ -4,14 +4,18 @@ Sistema de agendamento para salão de manicure, pedicure e nail design — gest�
 
 ## Status
 
-**Camadas 1, 2 e 3 concluídas** (julho e agosto de 2026). O app já é utilizável no salão:
+**Camadas 1 a 7 concluídas** (julho e agosto de 2026). O app já é utilizável no salão:
 
 - A cliente abre o link, escolhe um ou vários serviços, vê os horários livres e agenda
 - A dona vê a agenda, aprova, cancela e conclui
 - A dona lança agendamento por quem combinou por WhatsApp, com opção de encaixar fora do expediente
+- Ficha e histórico de cada cliente
+- Mensagens de confirmação, lembrete e retorno montadas para envio pelo WhatsApp
+- Vitrine de trabalhos na tela da cliente, e fotos guardadas em cada atendimento
+- Faturamento por dia, semana e mês, com forma de pagamento anotada na conclusão
 - Serviços, horários, folgas, promoções e preferências são configurados por ela
 
-Próximo passo: camada 4, ficha e histórico da cliente.
+Próximo passo: camada 8, refinamento.
 
 ## Como rodar
 
@@ -47,6 +51,26 @@ npm run web
 | `npm run android` | Abre num emulador Android |
 | `npx tsc --noEmit` | Verifica erros de tipo sem gerar arquivos |
 
+## Gerar o APK
+
+O build roda na nuvem da Expo — não é preciso instalar Android Studio.
+
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest build -p android --profile preview
+```
+
+O perfil `preview` gera **APK**, que instala direto no celular. O perfil `production` gera **app-bundle**, formato exigido pela Play Store — só serve quando for publicar.
+
+As credenciais do Supabase não vão no repositório, então precisam ser cadastradas uma vez como variáveis de ambiente do projeto no [painel da Expo](https://expo.dev), no ambiente `preview`:
+
+| Variável | Onde achar |
+|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Idem, a chave `anon` |
+
+Sem elas o app compila e abre com erro dizendo o que falta.
+
 ## Stack escolhida
 
 - **React Native com Expo** (TypeScript) — um código para iPhone e Android, e também para navegador
@@ -68,10 +92,10 @@ O app sai em camadas, cada uma utilizável sozinha:
 1. ~~Fundação — projeto, tema, banco de dados~~ ✅
 2. ~~Login e configuração~~ ✅
 3. ~~Agendar — cliente marca pelo link, dona vê e aprova~~ ✅ ← *já dá para usar no salão*
-4. Clientes — ficha, histórico
-5. WhatsApp — confirmação, lembrete e retorno
-6. Fotos — galeria e registro dos atendimentos
-7. Financeiro — faturamento
+4. ~~Clientes — ficha, histórico~~ ✅
+5. ~~WhatsApp — confirmação, lembrete e retorno~~ ✅
+6. ~~Fotos — galeria e registro dos atendimentos~~ ✅
+7. ~~Financeiro — faturamento~~ ✅
 8. Refinamento — acertar o que o uso real mostrar
 
 A configuração era a última camada e passou para a segunda: sem ela, a lógica de horários livres seria construída sobre serviços e horários inventados ([DT-015](docs/DECISOES.md)).

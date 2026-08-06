@@ -1,13 +1,14 @@
 {
   "expo": {
     "name": "Yaya Kawaii Nails",
-    "slug": "yaya-kawaii-nails",
+    "slug": "luan-silva",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "yayakawaiinails",
     "userInterfaceStyle": "automatic",
     "android": {
+      "package": "com.yayakawaiinails.app",
       "adaptiveIcon": {
         "backgroundColor": "#F4661F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -34,6 +35,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "18f140b4-3561-45a5-a097-7a836bbb8658"
+      }
+    },
+    "owner": "luansilvas-team"
   }
 }
