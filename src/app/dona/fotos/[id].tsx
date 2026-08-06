@@ -1,13 +1,14 @@
 /**
- * Galeria de trabalhos.
+ * As fotos de um atendimento.
  *
- * É a vitrine que a cliente vê antes de escolher o serviço — em salão de unha,
- * é o que mais vende. Por isso a ordem importa: a primeira foto é o cartão de
- * visitas do salão.
+ * Diferente da galeria em tudo que importa: aqui a unha é de uma cliente que
+ * não escolheu aparecer em vitrine nenhuma. O depósito é privado e o endereço
+ * de cada foto é temporário — por isso a lista é buscada toda vez que a tela
+ * abre, e não guardada.
  */
 
 import { Image } from 'expo-image';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,31 +20,36 @@ import { Card } from '@/components/card';
 import { ScreenHeader } from '@/components/screen-header';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  addGalleryPhoto,
-  listGalleryPhotos,
-  removeGalleryPhoto,
-  reorderGalleryPhotos,
-  updateGalleryCaption,
-  type GalleryPhoto,
-} from '@/lib/photos';
+import { getAppointment, type AgendaItem } from '@/lib/agenda';
 import { pickFromLibrary, takePhoto } from '@/lib/pick-image';
+import {
+  addAppointmentPhoto,
+  listAppointmentPhotos,
+  removeAppointmentPhoto,
+  updateAppointmentPhotoNote,
+  type AppointmentPhoto,
+} from '@/lib/photos';
 
-export default function GalleryScreen() {
+export default function AppointmentPhotosScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [photos, setPhotos] = useState<GalleryPhoto[] | null>(null);
+  const [appointment, setAppointment] = useState<AgendaItem | null>(null);
+  const [photos, setPhotos] = useState<AppointmentPhoto[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     try {
-      setPhotos(await listGalleryPhotos());
+      const [found, list] = await Promise.all([getAppointment(id), listAppointmentPhotos(id)]);
+      setAppointment(found);
+      setPhotos(list);
     } catch (cause) {
       setError((cause as Error).message);
+      setPhotos([]);
     }
-  }, []);
+  }, [id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -59,7 +65,9 @@ export default function GalleryScreen() {
       if (!picked) return;
 
       setBusy(true);
-      await addGalleryPhoto(picked.base64, null);
+      // Sem observação: fotografar é o que tem hora para acontecer. Escrever
+      // vem depois, no campo da própria foto, se ela quiser.
+      await addAppointmentPhoto(id, picked.base64, null);
       await reload();
     } catch (cause) {
       setError((cause as Error).message);
@@ -68,12 +76,12 @@ export default function GalleryScreen() {
     }
   }
 
-  async function remove(photo: GalleryPhoto) {
+  async function remove(photo: AppointmentPhoto) {
     setBusy(true);
     setError(null);
 
     try {
-      await removeGalleryPhoto(photo.id, photo.path);
+      await removeAppointmentPhoto(photo.id, photo.path);
       await reload();
     } catch (cause) {
       setError((cause as Error).message);
@@ -82,36 +90,21 @@ export default function GalleryScreen() {
     }
   }
 
-  async function saveCaption(photo: GalleryPhoto, caption: string | null) {
+  async function saveNote(photo: AppointmentPhoto, note: string | null) {
     setError(null);
 
     try {
-      await updateGalleryCaption(photo.id, caption);
+      await updateAppointmentPhotoNote(photo.id, note);
       await reload();
     } catch (cause) {
       setError((cause as Error).message);
     }
   }
 
-  async function move(index: number, direction: -1 | 1) {
-    if (!photos) return;
-
-    const target = index + direction;
-    if (target < 0 || target >= photos.length) return;
-
-    const reordered = [...photos];
-    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
-
-    const previous = photos;
-    setPhotos(reordered);
-
-    try {
-      await reorderGalleryPhotos(reordered.map((p) => p.id));
-    } catch (cause) {
-      setPhotos(previous);
-      setError((cause as Error).message);
-    }
-  }
+  const when = appointment ? new Date(appointment.starts_at) : null;
+  const subtitle = when
+    ? `${when.toLocaleDateString('pt-BR')} · ${appointment!.services.join(' + ') || 'Sem serviço registrado'}`
+    : undefined;
 
   return (
     <ScrollView
@@ -119,12 +112,10 @@ export default function GalleryScreen() {
       contentContainerStyle={[
         styles.content,
         { paddingTop: insets.top + Spacing.three, paddingBottom: insets.bottom + Spacing.five },
-      ]}>
+      ]}
+      keyboardShouldPersistTaps="handled">
       <View style={styles.inner}>
-        <ScreenHeader
-          title="Galeria"
-          subtitle="O que a cliente vê antes de escolher. A primeira foto é o seu cartão de visitas."
-        />
+        <ScreenHeader title={appointment?.client_name ?? 'Fotos'} subtitle={subtitle} />
 
         {error ? (
           <Card style={styles.errorCard}>
@@ -159,56 +150,33 @@ export default function GalleryScreen() {
         ) : photos.length === 0 ? (
           <Card>
             <AppText variant="body" color="textSecondary">
-              Nenhuma foto ainda. As que você colocar aqui aparecem para a cliente na hora de
-              escolher o serviço.
+              Nenhuma foto deste atendimento ainda. O que você colocar aqui fica no histórico da
+              cliente e só você vê — não vai para a vitrine.
             </AppText>
           </Card>
         ) : (
-          photos.map((photo, index) => (
+          photos.map((photo) => (
             <Card key={photo.id} style={styles.photoCard}>
               <Image
                 source={{ uri: photo.url }}
                 style={styles.photo}
                 contentFit="cover"
                 transition={200}
-                accessibilityLabel={photo.caption ?? 'Trabalho da Yaya'}
+                accessibilityLabel={photo.note ?? 'Foto do atendimento'}
               />
 
               <CaptionField
-                label="Legenda"
-                placeholder="O que é este trabalho"
-                value={photo.caption}
+                label="Observação"
+                placeholder="O que foi feito, cor, o que reparar da próxima vez"
+                value={photo.note}
                 disabled={busy}
-                onSave={(caption) => saveCaption(photo, caption)}
+                onSave={(note) => saveNote(photo, note)}
               />
 
               <View style={styles.photoActions}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Subir foto"
-                  disabled={index === 0 || busy}
-                  onPress={() => move(index, -1)}
-                  style={[styles.iconAction, { opacity: index === 0 ? 0.25 : 1 }]}>
-                  <AppText variant="label" color="textAccent">
-                    ▲
-                  </AppText>
-                </Pressable>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Descer foto"
-                  disabled={index === photos.length - 1 || busy}
-                  onPress={() => move(index, 1)}
-                  style={[
-                    styles.iconAction,
-                    { opacity: index === photos.length - 1 ? 0.25 : 1 },
-                  ]}>
-                  <AppText variant="label" color="textAccent">
-                    ▼
-                  </AppText>
-                </Pressable>
-
-                <View style={styles.grow} />
+                <AppText variant="support" color="textSecondary" style={styles.grow}>
+                  {new Date(photo.created_at).toLocaleDateString('pt-BR')}
+                </AppText>
 
                 <Pressable
                   accessibilityRole="button"
@@ -243,12 +211,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.medium,
     marginBottom: Spacing.two,
   },
-  photoActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    marginTop: Spacing.two,
-  },
+  photoActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   iconAction: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,

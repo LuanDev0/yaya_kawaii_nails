@@ -233,6 +233,24 @@ function AppointmentCard({
           </Pressable>
         ) : null}
 
+        {/* Só depois da hora: fotografar unha que ainda não foi feita não
+            existe. Some junto com o card quando ela conclui — a partir daí o
+            caminho é a ficha da cliente. */}
+        {passou && item.status === 'confirmado' ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Fotos do atendimento de ${item.client_name}`}
+            onPress={() => router.push({ pathname: '/dona/fotos/[id]', params: { id: item.id } })}
+            style={({ pressed }) => [
+              styles.action,
+              { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+            ]}>
+            <AppText variant="label" color="textAccent">
+              Fotos
+            </AppText>
+          </Pressable>
+        ) : null}
+
         {actions.map((action) => (
           <Pressable
             key={action.status}

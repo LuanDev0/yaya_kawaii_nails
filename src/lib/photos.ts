@@ -124,6 +124,11 @@ export async function removeGalleryPhoto(id: string, path: string): Promise<void
   if (error) throw new Error(error.message);
 }
 
+export async function updateGalleryCaption(id: string, caption: string | null): Promise<void> {
+  const { error } = await supabase.from('gallery_photos').update({ caption }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
 export async function reorderGalleryPhotos(orderedIds: string[]): Promise<void> {
   for (const [index, id] of orderedIds.entries()) {
     const { error } = await supabase
@@ -172,6 +177,11 @@ export async function addAppointmentPhoto(
     .from('appointment_photos')
     .insert({ appointment_id: appointmentId, path, note });
 
+  if (error) throw new Error(error.message);
+}
+
+export async function updateAppointmentPhotoNote(id: string, note: string | null): Promise<void> {
+  const { error } = await supabase.from('appointment_photos').update({ note }).eq('id', id);
   if (error) throw new Error(error.message);
 }
 

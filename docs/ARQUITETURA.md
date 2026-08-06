@@ -1,6 +1,6 @@
 # Arquitetura
 
-Estado em julho de 2026: existe a camada 1 — projeto, identidade visual, componentes base e banco de dados. Ainda não há telas de agendamento.
+Estado em agosto de 2026: camadas 1 a 6. O app agenda, gerencia clientes, monta as mensagens de WhatsApp e guarda fotos. Falta o faturamento (camada 7) e o refinamento (camada 8).
 
 ## Visão geral
 
@@ -66,8 +66,11 @@ Telas nunca declaram `fontFamily`. Use `<AppText variant="…">`, que já aplica
 | `TextField` | Campo de texto com rótulo e erro |
 | `Toggle` | Liga/desliga na paleta da marca |
 | `DragScroll` | Faixa horizontal que arrasta também com o mouse |
+| `CaptionField` | Texto curto preso a uma foto — legenda ou observação |
 
 `DragScroll` existe porque no celular o toque já arrasta, mas no navegador não: rolagem horizontal só responde a barra ou à roda com Shift. Quem está no computador tenta arrastar, não consegue, e conclui que a faixa travou. O cursor de mãozinha é o que avisa que dá.
+
+`CaptionField` grava por botão, e não ao sair do campo. O `TextField` espalha as props recebidas depois de definir o próprio `onBlur`, então um `onBlur` vindo de fora o substituiria e o realce de foco pararia de funcionar. O botão só aparece quando há algo a gravar — botão que não faz nada vira ruído.
 
 `Toggle` existe porque o `Switch` do React Native ignora as cores informadas em algumas plataformas e insiste no verde do sistema, destoando de um app em laranja e lavanda. Ele também define `aria-checked` explicitamente: o React Native Web não traduz `accessibilityState.checked` para o atributo do navegador, e sem isso um leitor de tela anuncia o controle sem dizer se está ligado.
 
@@ -92,6 +95,7 @@ Só `src/lib/` conversa com o banco. Telas não chamam o Supabase direto — ela
 | `calendar.ts` | Datas e a grade do mês |
 | `pricing.ts` | Desconto e preço final |
 | `whatsapp.ts` | Texto das mensagens e o endereço da conversa |
+| `photos.ts` | Galeria e fotos de atendimento — os dois depósitos |
 
 `pricing.ts` e `calendar.ts` não tocam no banco de propósito: são as duas contas que dão errado em silêncio — centavo de arredondamento e virada de mês — e ficar fora da camada de dados permite testá-las sem subir o app.
 
@@ -149,6 +153,7 @@ Dois públicos, dois tratamentos:
 | `/dona/cliente/[id]` | Ficha e histórico de uma cliente |
 | `/dona/retorno` | Quem passou do prazo e ainda não remarcou |
 | `/dona/galeria` | Vitrine de trabalhos |
+| `/dona/fotos/[id]` | Fotos de um atendimento. `id` é o do agendamento |
 | `/dona/servicos` | Lista de serviços |
 | `/dona/servico/[id]` | Cadastro e edição. `id` vale `novo` para criar |
 | `/dona/horarios` | Padrão semanal de atendimento |
@@ -156,6 +161,12 @@ Dois públicos, dois tratamentos:
 | `/dona/preferencias` | Aprovação, cancelamento, prazo de retorno |
 
 Tudo sob `/dona` passa pelo guardião de `src/app/dona/_layout.tsx`.
+
+**Rota nova não existe para o TypeScript até o servidor reiniciar.** Os tipos de rota são gerados em `.expo/types/`, e criar o arquivo da tela não basta para `npx tsc --noEmit` aceitar o endereço. Enquanto isso, empurre pela forma de objeto, que sempre funciona:
+
+```tsx
+router.push({ pathname: '/dona/fotos/[id]', params: { id } });
+```
 
 ### A tela da cliente é uma só
 
@@ -171,4 +182,4 @@ Trocar de serviço limpa o horário escolhido de propósito: a duração muda, e
 
 ## O que ainda não existe
 
-Da camada 4 em diante: ficha e histórico da cliente, mensagens de WhatsApp, lembrete de retorno, fotos e faturamento. Ver o [README](../README.md).
+Faturamento (camada 7) e refinamento (camada 8). Ver o [README](../README.md).

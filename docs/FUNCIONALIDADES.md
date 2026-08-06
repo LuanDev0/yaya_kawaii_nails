@@ -224,12 +224,33 @@ O prazo é definido pela dona na configuração.
 ## Fotos dos trabalhos
 **Camada 6**
 
-Dois usos distintos:
+Dois usos distintos, e os dois existem no app:
 
 - **Galeria** — vitrine pública, visível para a cliente enquanto escolhe o serviço, para inspirar
 - **Registro do atendimento** — foto anexada ao histórico da cliente, para a dona lembrar do que foi feito e acompanhar a saúde da unha
 
 A cliente não envia foto de referência ao agendar.
+
+### Galeria
+
+Em `/dona/galeria` a dona põe, tira e reordena as fotos, e escreve uma legenda em cada uma. A ordem é dela porque a primeira foto é o cartão de visitas do salão.
+
+A vitrine aparece no alto da tela da cliente, numa faixa que corre de lado. Se ela não carregar, a tela de agendamento continua funcionando: vitrine é enfeite, agendar é o serviço.
+
+### Fotos de um atendimento
+
+Cada atendimento tem sua própria página de fotos, em `/dona/fotos/[id]`. Chega-se lá por dois caminhos:
+
+- Pelo card da agenda, no botão **Fotos** — que só aparece depois da hora marcada, e enquanto o atendimento não foi concluído
+- Pela ficha da cliente, tocando em qualquer atendimento do histórico
+
+O segundo caminho é o que sobra no dia seguinte: concluir tira o atendimento da agenda, e a ficha passa a ser o único lugar onde ele está.
+
+São fotos soltas, quantas ela quiser, cada uma com um campo de observação opcional. Não há "antes" e "depois" obrigatórios: nem todo atendimento tem um antes que valha registrar, e um espaço vazio esperando foto atrapalha mais do que ajuda.
+
+A observação é escrita depois de enviar a foto, não antes. Fotografar é o que tem hora para acontecer — a cliente está ali, a unha está pronta. Escrever pode esperar.
+
+**Estas fotos não vão para a vitrine.** Ficam num depósito privado, e cada uma só abre por um endereço temporário que a dona gera ao entrar na tela. A cliente que faz manutenção não escolheu aparecer em lugar nenhum.
 
 ---
 

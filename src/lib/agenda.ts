@@ -91,6 +91,18 @@ export async function listUpcoming(days = 30): Promise<AgendaItem[]> {
   return ((data ?? []) as unknown as Row[]).map(toItem);
 }
 
+/** Um atendimento só, para telas que chegam pelo endereço dele. */
+export async function getAppointment(id: string): Promise<AgendaItem | null> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(SELECT)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data ? toItem(data as unknown as Row) : null;
+}
+
 export type ReturnCandidate = {
   client_id: string;
   name: string;

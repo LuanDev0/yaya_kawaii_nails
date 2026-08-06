@@ -167,14 +167,20 @@ export default function BookingScreen() {
           <DragScroll style={styles.gallery}>
             <View style={styles.galleryRow}>
               {gallery.map((photo) => (
-                <Image
-                  key={photo.id}
-                  source={{ uri: photo.url }}
-                  style={styles.galleryPhoto}
-                  contentFit="cover"
-                  transition={200}
-                  accessibilityLabel={photo.caption ?? 'Trabalho da Yaya'}
-                />
+                <View key={photo.id} style={styles.galleryItem}>
+                  <Image
+                    source={{ uri: photo.url }}
+                    style={styles.galleryPhoto}
+                    contentFit="cover"
+                    transition={200}
+                    accessibilityLabel={photo.caption ?? 'Trabalho da Yaya'}
+                  />
+                  {photo.caption ? (
+                    <AppText variant="support" color="textSecondary" numberOfLines={2}>
+                      {photo.caption}
+                    </AppText>
+                  ) : null}
+                </View>
               ))}
             </View>
           </DragScroll>
@@ -443,6 +449,7 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: Spacing.one },
   gallery: { marginTop: Spacing.four },
   galleryRow: { flexDirection: 'row', gap: Spacing.two },
+  galleryItem: { width: 150, gap: Spacing.one },
   galleryPhoto: { width: 150, height: 150, borderRadius: Radius.medium },
   errorCard: { marginTop: Spacing.three },
   step: {
