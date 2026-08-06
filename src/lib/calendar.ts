@@ -57,6 +57,83 @@ export function parseBRDate(input: string): ISODate | null {
   return iso;
 }
 
+/** 0 = domingo, igual a `weekdayOf` e a `business_hours`. */
+export function startOfWeekISO(date: ISODate): ISODate {
+  return addDaysISO(date, -weekdayOf(date));
+}
+
+export function startOfMonthISO(date: ISODate): ISODate {
+  const [year, month] = date.split('-');
+  return `${year}-${month}-01`;
+}
+
+export function endOfMonthISO(date: ISODate): ISODate {
+  const [year, month] = date.split('-').map(Number);
+
+  // Dia 0 do mês seguinte é o último dia deste — e acerta fevereiro bissexto
+  // sem ninguém precisar lembrar da regra.
+  return toISODate(year, month - 1, new Date(year, month, 0).getDate());
+}
+
+/**
+ * O recorte de tempo que o faturamento mostra.
+ *
+ * Mora aqui, e não junto das consultas, porque é conta de calendário: virada
+ * de mês, virada de ano e semana que começa no domingo. Sem importar nada, dá
+ * para conferir fora do app — que é o mesmo motivo de `pricing.ts`.
+ */
+export type Period = 'dia' | 'semana' | 'mes';
+
+export type DateRange = { from: ISODate; to: ISODate };
+
+export function periodRange(period: Period, today: ISODate): DateRange {
+  if (period === 'dia') return { from: today, to: today };
+
+  if (period === 'semana') {
+    const from = startOfWeekISO(today);
+    return { from, to: addDaysISO(from, 6) };
+  }
+
+  return { from: startOfMonthISO(today), to: endOfMonthISO(today) };
+}
+
+/**
+ * O instante em que o dia começa para quem está olhando a tela.
+ *
+ * Esta é a borda que erra em silêncio. `starts_at` no banco é um instante, e o
+ * dia da dona começa à meia-noite do fuso dela, não do servidor. Mandar o
+ * texto "2026-08-06T00:00:00" faz o Postgres ler em UTC, e no Brasil isso joga
+ * o atendimento das 21h para o dia seguinte — some de um dia e reaparece no
+ * outro, e só quem atende à noite descobre.
+ */
+export function dayStartInstant(date: ISODate): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(year, month - 1, day).toISOString();
+}
+
+/** Meia-noite do dia seguinte, para usar como fim exclusivo — sem 23:59:59. */
+export function dayAfterInstant(date: ISODate): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(year, month - 1, day + 1).toISOString();
+}
+
+/** O período anterior de mesmo tipo: ontem, a semana passada, o mês passado. */
+export function previousPeriodRange(period: Period, today: ISODate): DateRange {
+  if (period === 'dia') {
+    const yesterday = addDaysISO(today, -1);
+    return { from: yesterday, to: yesterday };
+  }
+
+  if (period === 'semana') {
+    const from = addDaysISO(startOfWeekISO(today), -7);
+    return { from, to: addDaysISO(from, 6) };
+  }
+
+  // Um dia antes do dia 1 cai no último dia do mês passado, seja ele 28 ou 31.
+  const lastDay = addDaysISO(startOfMonthISO(today), -1);
+  return { from: startOfMonthISO(lastDay), to: lastDay };
+}
+
 export const MONTH_NAMES = [
   'janeiro',
   'fevereiro',

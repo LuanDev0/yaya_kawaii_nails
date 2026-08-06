@@ -257,7 +257,33 @@ A observação é escrita depois de enviar a foto, não antes. Fotografar é o q
 ## Faturamento
 **Camada 7** · quem usa: dona
 
-Total faturado por período (semana e mês) e quais serviços dão mais retorno. Como cada agendamento já carrega o preço praticado no momento da marcação, o cálculo sai dos dados que já existem.
+Fica em `/dona/financeiro`, pelo painel de configuração.
+
+Um período por vez — **hoje, semana ou mês** — e a tela inteira recalcula junto. Ao lado do total vem sempre o período anterior de mesmo tamanho: ontem, a semana passada, o mês passado. Número sozinho não diz nada; é a comparação que transforma "R$ 800" em "R$ 800, subiu R$ 120".
+
+O que a tela mostra, no período escolhido:
+
+| Bloco | Responde |
+|---|---|
+| Total | Quanto entrou, quantos atendimentos, e quanto disso foi promoção |
+| Como entrou | Pix, dinheiro, cartão — e o que ficou sem anotação |
+| Quais serviços renderam mais | Quanto cada serviço faturou e quantas vezes foi feito |
+| Quem mais gastou | As clientes que mais deixaram dinheiro no período |
+| Falta anotar como pagou | Os atendimentos sem forma de pagamento, para completar ali mesmo |
+
+### Só conta o que foi concluído
+
+Atendimento confirmado cuja hora já passou **não** entra. Pode ter sido furo que ela ainda não cancelou, e faturamento que conta dinheiro que não entrou é pior que faturamento nenhum. O número só sobe quando ela aperta **Concluir** na agenda.
+
+### A forma de pagamento é perguntada na conclusão
+
+Apertar **Concluir** não fecha direto: o card pergunta **"pagou como?"** e oferece Pix, Dinheiro e Cartão — mais **"anoto depois"**, que conclui sem responder, e **"voltar sem concluir"**, para quem tocou sem querer.
+
+Poder pular é proposital. Se a forma fosse obrigatória, o caminho mais rápido num dia corrido seria não concluir — e o faturamento pararia de existir para proteger um campo secundário. O que ficou em branco aparece no fim da tela de faturamento, com os três botões ali, para ser completado quando der.
+
+### Por que dividir por serviço não é estimativa
+
+Cada serviço de um atendimento tem o próprio preço congelado no momento da marcação, e a soma deles é o total cobrado. Então num atendimento de manicure + pedicure o app sabe exatamente quanto foi de cada um — não rateia nem repete o valor cheio nos dois.
 
 ---
 

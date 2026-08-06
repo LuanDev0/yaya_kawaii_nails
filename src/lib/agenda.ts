@@ -8,6 +8,7 @@
 
 import { type AppointmentStatus } from '@/lib/booking';
 import { addDaysISO, todayISO } from '@/lib/calendar';
+import { type PaymentMethod } from '@/lib/payment';
 import { supabase } from '@/lib/supabase';
 
 export type AgendaItem = {
@@ -133,5 +134,25 @@ export async function listDueForReturn(): Promise<ReturnCandidate[]> {
  */
 export async function setStatus(id: string, status: AppointmentStatus): Promise<void> {
   const { error } = await supabase.from('appointments').update({ status }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Fecha o atendimento, anotando como foi pago.
+ *
+ * A forma pode vir nula: exigir que ela lembre para conseguir concluir faria
+ * do "não concluir" o caminho mais rápido, e aí o faturamento inteiro pararia
+ * de existir para proteger um campo secundário. O que ficou sem anotação
+ * aparece na tela de faturamento para ser completado depois.
+ */
+export async function concludeAppointment(
+  id: string,
+  payment: PaymentMethod | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('appointments')
+    .update({ status: 'concluido', payment_method: payment })
+    .eq('id', id);
+
   if (error) throw new Error(error.message);
 }

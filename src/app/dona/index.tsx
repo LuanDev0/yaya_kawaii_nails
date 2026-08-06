@@ -12,12 +12,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
 import { OwnerModeSwitch } from '@/components/owner-mode-switch';
+import { PaymentPicker } from '@/components/payment-picker';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { listPending, listUpcoming, setStatus, type AgendaItem } from '@/lib/agenda';
+import {
+  concludeAppointment,
+  listPending,
+  listUpcoming,
+  setStatus,
+  type AgendaItem,
+} from '@/lib/agenda';
 import { type AppointmentStatus } from '@/lib/booking';
 import { formatPhone } from '@/lib/clients';
 import { formatPrice } from '@/lib/format';
+import { type PaymentMethod } from '@/lib/payment';
 import { buildMessage, whatsAppUrl } from '@/lib/whatsapp';
 
 export default function AgendaScreen() {
@@ -51,6 +59,20 @@ export default function AgendaScreen() {
 
     try {
       await setStatus(item.id, status);
+      await reload();
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function conclude(item: AgendaItem, payment: PaymentMethod | null) {
+    setBusy(item.id);
+    setError(null);
+
+    try {
+      await concludeAppointment(item.id, payment);
       await reload();
     } catch (cause) {
       setError((cause as Error).message);
@@ -97,6 +119,7 @@ export default function AgendaScreen() {
                     item={item}
                     busy={busy === item.id}
                     onAct={act}
+                    onConclude={conclude}
                     highlight
                   />
                 ))}
@@ -115,7 +138,13 @@ export default function AgendaScreen() {
               </Card>
             ) : (
               upcoming.map((item) => (
-                <AppointmentCard key={item.id} item={item} busy={busy === item.id} onAct={act} />
+                <AppointmentCard
+                  key={item.id}
+                  item={item}
+                  busy={busy === item.id}
+                  onAct={act}
+                  onConclude={conclude}
+                />
               ))
             )}
           </>
@@ -129,15 +158,20 @@ function AppointmentCard({
   item,
   busy,
   onAct,
+  onConclude,
   highlight,
 }: {
   item: AgendaItem;
   busy: boolean;
   onAct: (item: AgendaItem, status: AppointmentStatus) => void;
+  onConclude: (item: AgendaItem, payment: PaymentMethod | null) => void;
   highlight?: boolean;
 }) {
   const { colors } = useTheme();
   const router = useRouter();
+
+  // Concluir abre a pergunta do pagamento em vez de fechar direto.
+  const [asking, setAsking] = useState(false);
 
   const starts = new Date(item.starts_at);
   const ends = new Date(item.ends_at);
@@ -203,6 +237,37 @@ function AppointmentCard({
         </AppText>
       </View>
 
+      {asking ? (
+        <View style={styles.asking}>
+          <AppText variant="label" color="textSecondary">
+            PAGOU COMO?
+          </AppText>
+
+          <PaymentPicker
+            disabled={busy}
+            onPick={(method) => {
+              setAsking(false);
+              onConclude(item, method);
+            }}
+            onSkip={() => {
+              setAsking(false);
+              onConclude(item, null);
+            }}
+          />
+
+          {/* Saída para quem tocou em Concluir sem querer. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voltar sem concluir"
+            disabled={busy}
+            onPress={() => setAsking(false)}
+            style={({ pressed }) => [styles.backOut, pressed && { opacity: 0.6 }]}>
+            <AppText variant="support" color="textSecondary">
+              Voltar sem concluir
+            </AppText>
+          </Pressable>
+        </View>
+      ) : (
       <View style={styles.actions}>
         {/* Só depois de confirmado: mandar mensagem sobre pedido que ainda
             pode ser recusado seria prometer o que não foi decidido. */}
@@ -257,7 +322,9 @@ function AppointmentCard({
             accessibilityRole="button"
             accessibilityLabel={`${action.label} atendimento de ${item.client_name}`}
             disabled={busy}
-            onPress={() => onAct(item, action.status)}
+            onPress={() =>
+              action.status === 'concluido' ? setAsking(true) : onAct(item, action.status)
+            }
             style={({ pressed }) => [
               styles.action,
               {
@@ -272,6 +339,7 @@ function AppointmentCard({
           </Pressable>
         ))}
       </View>
+      )}
     </Card>
   );
 }
@@ -288,7 +356,9 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: Spacing.two, paddingVertical: Spacing.one, borderRadius: Radius.pill },
   divider: { borderTopWidth: 1, marginTop: Spacing.three, paddingTop: Spacing.three },
   line: { marginTop: Spacing.one },
-  actions: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.three },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.three },
+  asking: { gap: Spacing.two, marginTop: Spacing.three },
+  backOut: { alignSelf: 'flex-start', paddingVertical: Spacing.one },
   action: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,

@@ -69,7 +69,10 @@ Não há campo de dados de saúde. A anamnese fica em papel ([DT-010](DECISOES.m
 | `status` | text | `pendente`, `confirmado`, `cancelado`, `concluido` |
 | `price_cents` | integer | **Cópia** do valor cobrado no momento da marcação |
 | `discount_cents` | integer | Quanto de promoção foi dado. Zero quando não houve |
+| `payment_method` | text | `pix`, `dinheiro`, `cartao` — ou nulo, ver abaixo |
 | `notes` | text | |
+
+**`payment_method` aceita nulo de propósito.** Nulo quer dizer "o atendimento aconteceu e ela não anotou como foi pago", que é diferente de erro. Se o campo fosse obrigatório, o jeito mais rápido de fechar o dia passaria a ser não concluir nada — e aí o faturamento inteiro deixaria de existir para proteger um campo secundário. A tela de faturamento lista os nulos à parte, para completar depois.
 
 ### `schedule_exceptions`
 
