@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
+import { DragScroll } from '@/components/drag-scroll';
 import { TextField } from '@/components/text-field';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -163,7 +164,7 @@ export default function BookingScreen() {
         ) : null}
 
         {gallery.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery}>
+          <DragScroll style={styles.gallery}>
             <View style={styles.galleryRow}>
               {gallery.map((photo) => (
                 <Image
@@ -176,7 +177,7 @@ export default function BookingScreen() {
                 />
               ))}
             </View>
-          </ScrollView>
+          </DragScroll>
         ) : null}
 
         <Step number={1} title="O que você quer fazer" />

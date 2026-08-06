@@ -65,6 +65,9 @@ Telas nunca declaram `fontFamily`. Use `<AppText variant="…">`, que já aplica
 | `Card` | Superfície com borda e canto arredondado |
 | `TextField` | Campo de texto com rótulo e erro |
 | `Toggle` | Liga/desliga na paleta da marca |
+| `DragScroll` | Faixa horizontal que arrasta também com o mouse |
+
+`DragScroll` existe porque no celular o toque já arrasta, mas no navegador não: rolagem horizontal só responde a barra ou à roda com Shift. Quem está no computador tenta arrastar, não consegue, e conclui que a faixa travou. O cursor de mãozinha é o que avisa que dá.
 
 `Toggle` existe porque o `Switch` do React Native ignora as cores informadas em algumas plataformas e insiste no verde do sistema, destoando de um app em laranja e lavanda. Ele também define `aria-checked` explicitamente: o React Native Web não traduz `accessibilityState.checked` para o atributo do navegador, e sem isso um leitor de tela anuncia o controle sem dizer se está ligado.
 
