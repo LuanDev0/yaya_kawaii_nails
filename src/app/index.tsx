@@ -49,6 +49,7 @@ export default function BookingScreen() {
   const [phone, setPhone] = useState('');
   const [total, setTotal] = useState({ duration_minutes: 0, buffer_minutes: 0 });
   const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
+  const [expanded, setExpanded] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -186,57 +187,77 @@ export default function BookingScreen() {
           <Card>
             {services.map((service, index) => {
               const selected = chosen.includes(service.id);
+              const open = expanded.includes(service.id);
 
               return (
-                <Pressable
+                <View
                   key={service.id}
-                  accessibilityRole="checkbox"
-                  aria-checked={selected}
-                  accessibilityLabel={service.name}
-                  onPress={() => toggleService(service.id)}
-                  style={({ pressed }) => [
-                    styles.serviceRow,
-                    index > 0 && { borderTopWidth: 1, borderTopColor: colors.border },
-                    pressed && { opacity: 0.6 },
-                  ]}>
-                  <View
-                    style={[
-                      styles.check,
-                      {
-                        borderColor: selected ? colors.primary : colors.border,
-                        backgroundColor: selected ? colors.primary : 'transparent',
-                      },
-                    ]}>
-                    {selected ? (
-                      <AppText variant="label" color="onPrimary">
-                        ✓
-                      </AppText>
-                    ) : null}
-                  </View>
+                  style={[index > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    aria-checked={selected}
+                    accessibilityLabel={service.name}
+                    onPress={() => toggleService(service.id)}
+                    style={({ pressed }) => [styles.serviceRow, pressed && { opacity: 0.6 }]}>
+                    <View
+                      style={[
+                        styles.check,
+                        {
+                          borderColor: selected ? colors.primary : colors.border,
+                          backgroundColor: selected ? colors.primary : 'transparent',
+                        },
+                      ]}>
+                      {selected ? (
+                        <AppText variant="label" color="onPrimary">
+                          ✓
+                        </AppText>
+                      ) : null}
+                    </View>
 
-                  <View style={styles.serviceInfo}>
-                    <AppText variant="bodyBold">{service.name}</AppText>
-                    {service.description ? (
+                    <View style={styles.serviceInfo}>
+                      <AppText variant="bodyBold">{service.name}</AppText>
                       <AppText variant="support" color="textSecondary">
-                        {service.description}
+                        {formatDuration(service.duration_minutes)}
                       </AppText>
-                    ) : null}
-                    <AppText variant="support" color="textSecondary">
-                      {formatDuration(service.duration_minutes)}
-                    </AppText>
-                  </View>
+                    </View>
 
-                  <View style={styles.priceColumn}>
-                    {hasDiscount(service, today) ? (
-                      <AppText variant="support" color="textSecondary" style={styles.struck}>
-                        {formatPrice(service.price_cents)}
+                    <View style={styles.priceColumn}>
+                      {hasDiscount(service, today) ? (
+                        <AppText variant="support" color="textSecondary" style={styles.struck}>
+                          {formatPrice(service.price_cents)}
+                        </AppText>
+                      ) : null}
+                      <AppText variant="bodyBold" color="textAccent">
+                        {formatPrice(finalPriceCents(service, today))}
                       </AppText>
-                    ) : null}
-                    <AppText variant="bodyBold" color="textAccent">
-                      {formatPrice(finalPriceCents(service, today))}
+                    </View>
+                  </Pressable>
+
+                  {/* Área de toque própria: tocar para ler não pode marcar o
+                      serviço sem querer. */}
+                  {service.description ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: open }}
+                      accessibilityLabel={`${open ? 'Ocultar' : 'Ver'} o que está incluso em ${service.name}`}
+                      onPress={() =>
+                        setExpanded((current) =>
+                          open ? current.filter((x) => x !== service.id) : [...current, service.id],
+                        )
+                      }
+                      style={({ pressed }) => [styles.detailsToggle, pressed && { opacity: 0.6 }]}>
+                      <AppText variant="label" color="textAccent">
+                        {open ? 'Ocultar detalhes ⌄' : 'Ver o que está incluso ›'}
+                      </AppText>
+                    </Pressable>
+                  ) : null}
+
+                  {open && service.description ? (
+                    <AppText variant="support" color="textSecondary" style={styles.description}>
+                      {service.description}
                     </AppText>
-                  </View>
-                </Pressable>
+                  ) : null}
+                </View>
               );
             })}
           </Card>
@@ -452,6 +473,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   serviceInfo: { flex: 1 },
+  detailsToggle: { paddingBottom: Spacing.three, paddingLeft: 36 },
+  description: { paddingBottom: Spacing.three, paddingLeft: 36 },
   priceColumn: { alignItems: 'flex-end' },
   struck: { textDecorationLine: 'line-through' },
   summary: { marginTop: Spacing.three },

@@ -97,7 +97,7 @@ graph LR
 
 ### Passo a passo
 
-1. A cliente abre o link e vê a lista de serviços, cada um com preço e duração
+1. A cliente abre o link e vê a lista de serviços, cada um com preço e duração. A descrição fica recolhida atrás de "ver o que está incluso" — aberta, uma boa descrição empurra os outros serviços para fora da tela. O toque de abrir tem área própria, senão ler marcaria o serviço sem querer
 2. Escolhe um serviço
 3. Escolhe a data num calendário. Dias sem vaga aparecem desabilitados
 4. Escolhe entre os horários disponíveis daquele dia
